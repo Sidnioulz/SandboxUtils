@@ -1,0 +1,19 @@
+[Unit]
+Description=Secure File Access Daemon
+After=syslog.target
+Requires=dbus.service
+
+[Service]
+Type=dbus
+BusName=org.mupuf.SecureFileAccess
+ExecStart=/home/steve/Development/gdbus-sfad/server/BUILD/bin/sfad
+KillMode=process
+Restart=always
+WatchdogSec=10
+Environment=DISPLAY=:0
+
+
+[Install]
+WantedBy=graphical.target
+Alias=dbus-org.mupuf.SecureFileAccess.service
+

@@ -1,0 +1,9 @@
+2014-03-28  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * foo.bar (myfunction): my changes made
+    additional changes
+
+    * myfile.ext (unrelated_change): my changes made
+    to myfile.ext but completely unrelated to the above
+
+    * anotherfile.ext (somefunction): more changes
