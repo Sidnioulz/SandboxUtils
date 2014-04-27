@@ -1,14 +1,11 @@
-AM_CPPFLAGS = -Wall $(DBUS_CFLAGS) $(GTK_CFLAGS)
-AM_LDFLAGS = $(DBUS_LIBS) $(GTK_LIBS)
-bin_PROGRAMS = sfad
+AM_CPPFLAGS = -Wall $(DBUS_CFLAGS) $(GTK_CFLAGS) $(SYSTEMD_CFLAGS)
+AM_LDFLAGS = $(DBUS_LIBS) $(GTK_LIBS) $(SYSTEMD_LIBS)
+bin_PROGRAMS = sud
 
-sfad_CPPFLAGS = -DG_LOG_DOMAIN=\"sfad\" $(AM_CPPFLAGS)
-
-BUILT_SOURCES = server-bindings.h 
-# We don't want to install this header
-noinst_HEADERS = $(BUILT_SOURCES)
+sud_CPPFLAGS = -DG_LOG_DOMAIN=\"sud\" $(AM_CPPFLAGS)
 
 # Correctly clean the generated headers, but keep the xml description
 CLEANFILES = $(BUILT_SOURCES)
 
-sfad_SOURCES = server.c server.h
+sud_SOURCES = server.c 
+

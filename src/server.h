@@ -1,71 +1,91 @@
-/*
- *   Source Code from the DBus Activation Tutorial
- *   from Raphael Slinckx
- *
- *   This code illustrates how to requrest the dbus daemon
- *   to automatically start a program that provides a given
- *   service. For more detailed information refer also to
- *   http://raphael.slinckx.net/blog/documents/dbus-tutorial
- *   where all source has taken from.
- *
- *   Provision of all glue code to form compilable application
- *   by Otto Linnemann
- *
- *   Declarations for Server
+/* SandboxUtils -- Daemon header
+ * Copyright (c) Steve Dodier-Lazaro <sidnioulz@gmail.com>, 2014
+ * 
+ * Under GPLv3
+ * 
+ *** 
+ * 
+ * Class desc here
+ * XXX this class manages the 
+ * 
  */
 
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef _SUD_SERVER_H
+#define _SUD_SERVER_H
 
-/* sfad internals */
-#define NAME "sfad"
+/* sud internals */
+#define NAME "sud"
 #define VERSION "0.2"
 
-#define SANDBOXFILECHOOSERDIALOGIFACE "org.mupuf.SandboxFileChooserDialog"
-#define SANDBOXUTILSPATH "/org/mupuf/SandboxUtils"
-#define SANDBOXFILECHOOSERDIALOGERRORDOMAIN SANDBOXFILECHOOSERDIALOGIFACE".Error"
+#define SANDBOXUTILS_IFACE "org.mupuf.SandboxUtils"
+#define SANDBOXUTILS_PATH "/org/mupuf/SandboxUtils"
 
+//FIXME use sfcd's own files later on
+#define SFCD_IFACE "org.mupuf.SandboxFileChooserDialog"
+#define SFCD_ERROR_DOMAIN SFCD_IFACE".Error"
+
+/* Future Error Codes - TODO
+ * These error codes will be registered with GDBus and propagated back to the
+ * calling clients.
+ */
 static const enum {
   SANDBOX_FILECHOOSERDIALOG_CREATION_ERROR,
-  SANDBOX_FILECHOOSERDIALOG_LOOKUP_ERROR
+  SANDBOX_FILECHOOSERDIALOG_LOOKUP_ERROR,
+  SANDBOX_FILECHOOSERDIALOG_FORBIDDEN_CHANGE,
+  SANDBOX_FILECHOOSERDIALOG_FORBIDDEN_QUERY
 } SandboxFileChooserDialogErrorCodes;
+
 
 /* Dialog running state - this is used to prevent forms of abuse when the dialog
  * is running. A dialog is created at CONFIGURATION state, configured by the
  * client, run (during which it is in RUNNING state) and then switched to the
  * DATA_RETRIEVAL state, during which the client reads the file(s) selected by 
- * the user and has access to them. If the dialog is reconfigured or reused, it
+ * the user and has access to them. If the dialog is modified or reused, it
  * switches back to a previous state and query functions cannot be called until
  * it successfully runs again.
+ * 
+ ***
+ * Generic Methods:
+ * Create -- initialises state to CONFIGURATION
+ * Destroy -- object no longer usable
+ * 
+ ***
+ * RUNNING Methods:
+ * Run -- switches state from * to RUNNING
+ * Present -- fails if not RUNNING
+ * CancelRun -- switches state from RUNNING to CONFIGURATION
+ * 
+ * RUNNING Signals:
+ * foo destroyed XXX -- object no longer usable
+ * bar ran XXX --  switches state from RUNNING to DATA_RETRIEVAL
+ * 
+ ***
+ * CONFIGURATION Methods:
+ * SetAction -- fails if RUNNING, switches state from DATA_RETRIEVAL to CONFIGURATION
+ * GetAction -- fails if RUNNING
+ * ...TODO 
+ *
  */
-
 typedef enum {
   SANDBOX_FILECHOOSERDIALOG_CONFIGURATION,
   SANDBOX_FILECHOOSERDIALOG_RUNNING,
   SANDBOX_FILECHOOSERDIALOG_DATA_RETRIEVAL
 } RunState;
 
-//XXX original plan for mutex'ing the state
-// A semaphore is incremented before any method looks up the table, and until it's done touching the GTK dialog (except run/destroy)
-// The destroy method waits, after removing the dialog entry from the table, and until said semaphore is empty, before it destroys the actual object
-// When the dialog is in running state, all conf/query methods must return before they can change state themselves (mutex for state changing)
-// When the dialog is running and a destroy call is sent, destroy will lock access to the semaphor and join as usual, but emit a delete-event signal beforehand
 
 
-//TODO style fooBar -> foo_bar
-//TODO on the long term, use g_thread_try_new and use the previous sync function with timeout handling for when threads cant be made?
- 
+
+
+
 //TODO encode states in already-written functions
-//TODO use that class
-// state-changing code should be mutex-protected
-// In particular, run changes handlers for deletion events and must be protected
-// before destroy is ever called.
 typedef struct _SandboxFileChooserDialog
 {
   GtkWidget             *dialog;
-  RunState              state;
-  GMutex                runMutex;
-  GMutex                stateMutex;
+  RunState               state;
+  GMutex                 runMutex;
+  GMutex                 stateMutex;
+  GThread               *runThread;
+  gint                   runSourceId;
     
 } SandboxFileChooserDialog;
 
@@ -77,6 +97,29 @@ typedef struct _SandboxFileChooserDialogClient
   const guint32     runLimits;   
   GMutex            dialogsMutex;     
 } SandboxFileChooserDialogClient;
+
+
+
+
+/* Struct to transfer data to the running function */
+typedef struct {
+  gchar                      *dialog_id;
+  SandboxFileChooserDialog   *sfcd;
+  GDBusConnection            *connection;
+  gchar                      *sender;
+  gchar                      *object_path;
+  gchar                      *interface_name;
+  gint                        response_id;
+  gint                        return_state;
+  GMainLoop                  *loop;
+  gboolean                    destroyed;
+  gboolean                    was_modal;
+  gulong                      response_handler;
+  gulong                      unmap_handler;
+  gulong                      destroy_handler;
+  gulong                      delete_handler;
+} RunFuncData;
+
 
 
 /* CREATION / DELETION METHODS */
@@ -91,17 +134,20 @@ server_sandbox_file_chooser_dialog_destroy (GVariant *parameters,
 
                              
 /* RUNNING METHODS */
-//FIXME when ANY dialog is running, presenting/running other dialogs should be proscribed? or compo should avoid overlappin'               
-//TODO rewrite in GTK to verify a static structure indicating which GtkFileChooserDialog's exist. If a dialog being run is a GFCD, call GFCD_run and exit
 gboolean
-server_sandbox_file_chooser_dialog_run (GVariant *parameters,
-                                        gint32 *return_code,
-                                        gboolean *was_destroyed,
-                                        GError **error);
+server_sandbox_file_chooser_dialog_run (GDBusConnection       *connection,
+                                        const gchar           *sender,
+                                        const gchar           *object_path,
+                                        const gchar           *interface_name,
+                                        GVariant              *parameters,
+                                        GError               **error);
                                         
 gboolean
 server_sandbox_file_chooser_dialog_present (GVariant *parameters,
                                             GError **error);
+                          
+//TODO Signals                  
+//TODO CancelRun
 
 
 
@@ -114,6 +160,17 @@ gboolean
 server_sandbox_file_chooser_dialog_get_action (GVariant *parameters,
                                                gint32   *action,
                                                GError  **error);
+                                               
+                                               
+                                               
+                                               
+                                               
+                                               
+                                               
+                                               
+                                               
+                                               
+                                               
 gboolean
 server_sandbox_file_chooser_set_local_only (GVariant *parameters,
                                             GError **error);
@@ -278,9 +335,6 @@ gtk_file_chooser_set_filename (chooser, existing_filename);
 gtk_file_chooser_get_filename (chooser);
 
 
-// ETC TODO: all GtkWidget, GtkDialog must be explored for useful API
-// The API must be revised through a security eye though
-                                            
 gboolean server_gtk_widget_show_all (int server, gchar *dialog_id,
                                              GError **error);
 
@@ -305,4 +359,4 @@ gboolean server_gtk_widget_show_all (int server, gchar *dialog_id,
 
 
 
-#endif /* #ifndef SERVER_H */
+#endif /* #ifndef _SUD_SERVER_H */
