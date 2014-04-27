@@ -7,6 +7,9 @@ AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
+
+SYSTEMD_REQUIRED=212
+
 # Checks for programs.
 AC_PROG_CC
 PKG_PROG_PKG_CONFIG
@@ -14,6 +17,7 @@ PKG_PROG_PKG_CONFIG
 # Checks for libraries.
 PKG_CHECK_MODULES([DBUS], [dbus-glib-1])
 PKG_CHECK_MODULES([GTK], [gtk+-3.0])
+PKG_CHECK_MODULES(SYSTEMD, [ libsystemd >= $SYSTEMD_REQUIRED ])
 
 # Checks for header files.
 
