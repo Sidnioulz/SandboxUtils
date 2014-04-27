@@ -1,9 +1,10 @@
+2014-04-27  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * server.*: API changes, supporting states, running, cancelling, creating
+    and destroying dialogs, as well as basic mutex protection.
+
+    * server.c, configure.ac: watchdog implementation
+    
 2014-03-28  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
-    * foo.bar (myfunction): my changes made
-    additional changes
-
-    * myfile.ext (unrelated_change): my changes made
-    to myfile.ext but completely unrelated to the above
-
-    * anotherfile.ext (somefunction): more changes
+    * *: initial commit
