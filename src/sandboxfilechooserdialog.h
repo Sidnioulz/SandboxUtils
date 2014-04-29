@@ -73,7 +73,8 @@ typedef enum {
   SFCD_ERROR_CREATION,
   SFCD_ERROR_LOOKUP,
   SFCD_ERROR_FORBIDDEN_CHANGE,
-  SFCD_ERROR_FORBIDDEN_QUERY
+  SFCD_ERROR_FORBIDDEN_QUERY,
+  SFCD_ERROR_UNKNOWN
 } SfcdErrorCode;
 
 
@@ -144,12 +145,12 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
 /* CONFIGURATION / MANAGEMENT METHODS  -- USABLE BEFORE RUN */
 gboolean
 sfcd_set_action (SandboxFileChooserDialog  *self,
-                 gboolean                   action,
+                 gint32                     action,
                  GError                   **error);
 
 gboolean
 sfcd_get_action (SandboxFileChooserDialog  *self,
-                 gboolean                  *result,
+                 gint32                    *result,
                  GError                   **error);
 
 //TODO rest of the GtkFileChooserDialog API -- should be quick!

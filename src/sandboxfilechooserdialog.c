@@ -144,6 +144,9 @@ sfcd_destroy (SandboxFileChooserDialog *self)
 {
   g_return_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self));
 
+  syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been dropped by one.\n",
+              self->id, sfcd_get_dialog_title (self));
+
   g_object_unref (self);
 }
 
@@ -300,8 +303,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     
     // We drop our own reference to get the object destroyed. If no other method
     // is being called, then the object will reach a refcount of 0 and dispose.
-    g_object_unref (d->sfcd);
-//    _sandbox_file_chooser_dialog_destroy (d->sfcd, d->sfcd->id); //FIXME
+    sfcd_destroy (d->sfcd);
   }
   else
   {
@@ -521,7 +523,7 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
 
 gboolean
 sfcd_set_action (SandboxFileChooserDialog  *self,
-                 gboolean                   action,
+                 gint32                     action,
                  GError                   **error)
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
@@ -572,7 +574,7 @@ sfcd_set_action (SandboxFileChooserDialog  *self,
 
 gboolean
 sfcd_get_action (SandboxFileChooserDialog *self,
-                 gboolean                 *result,
+                 gint32                   *result,
                  GError                  **error)
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
