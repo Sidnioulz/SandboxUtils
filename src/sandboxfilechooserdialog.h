@@ -64,6 +64,7 @@ gchar *SfcdRunStatePrintable[5] = {"Wrong State (an error occurred)",
                                    "Running",
                                    "Data Retrieval",
                                    NULL};
+                                   
 
 /* Error codes - used to distinguish between families of errors when misusing
  * the sfcd methods.
@@ -118,6 +119,9 @@ sfcd_get_state (SandboxFileChooserDialog *self);
 
 const gchar *
 sfcd_get_state_printable (SandboxFileChooserDialog *self);
+
+const gchar *
+sfcd_get_dialog_title (SandboxFileChooserDialog *self);
 
 gboolean
 sfcd_is_running (SandboxFileChooserDialog *self);

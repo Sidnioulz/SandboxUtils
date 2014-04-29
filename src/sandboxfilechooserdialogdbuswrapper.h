@@ -25,6 +25,7 @@ typedef struct {
 } SfcdDbusWrapperInfo;
 
 
+/*** SandboxFileChooserDialog part of wrapper ***/
 
 gboolean
 sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
@@ -82,19 +83,6 @@ sfcd_dbus_wrapper_sfcd_get_local_only (SandboxUtilsClient *cli,
 //TODO rest of API
 
 
-/* ...
- * ...
- * @user_data: pointer to #SandboxUtilsClient instance
- */
-static void
-sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
-                                     const gchar           *sender,
-                                     const gchar           *object_path,
-                                     const gchar           *interface_name,
-                                     const gchar           *method_name,
-                                     GVariant              *parameters,
-                                     GDBusMethodInvocation *invocation,
-                                     gpointer               user_data);
 
 
 
@@ -103,12 +91,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
 
 
 
-
-
-
-
-
-
+/*** DBus part of wrapper ***/
 
 SfcdDbusWrapperInfo *
 sfcd_dbus_wrapper_dbus_init ();

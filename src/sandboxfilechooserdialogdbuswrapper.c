@@ -15,9 +15,53 @@
 #include "sandboxfilechooserdialogdbuswrapper.h"
 
 
+//TODO listen to signals on sfcd's and then emit GDBus signals
+//
 
-//TODO methods here, call the real sfcd inside
 
+/*
+ * TODO doc
+ */
+static SandboxFileChooserDialog *
+_sfcd_dbus_wrapper_lookup (SandboxUtilsClient  *cli,
+                           const gchar         *dialog_id,
+                           GError             **error)
+{
+  SandboxFileChooserDialog *sfcd = NULL;
+
+  g_mutex_lock (&cli->dialogsMutex);
+  sfcd = g_hash_table_lookup (cli->dialogs, dialog_id);
+
+	if (sfcd == NULL)
+	{
+		g_set_error (error,
+		             g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+		             SFCD_ERROR_LOOKUP,
+				         "SfcdDbusWrapper._Lookup: dialog '%s' does not exist.\n",
+				         dialog_id);
+
+	  syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+	}
+  else
+  {
+    // Prevents the object from being deleted by a concurrent thread while in use
+    g_object_ref (sfcd);
+  }
+
+  g_mutex_unlock (&cli->dialogsMutex);
+
+  return sfcd;
+}
+
+/*
+ * TODO doc
+ */
+static void
+_sfcd_dbus_wrapper_lookup_finished (SandboxFileChooserDialog *sfcd)
+{
+  // Removes the deletion-preventing reference added by our lookup function
+  g_object_unref (sfcd);
+}
 
 
 
@@ -41,9 +85,8 @@ sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
   GVariantIter *iter;
   GVariant     *item;
 
-  g_return_val_if_fail (cli!=NULL, FALSE);
-  g_return_val_if_fail (dialog_id!=NULL, FALSE);
-  g_return_val_if_fail (error!=NULL, FALSE);
+  g_return_val_if_fail (cli != NULL, FALSE);
+  g_return_val_if_fail (dialog_id != NULL, FALSE);
 
   g_variant_get (parameters, "(&ssia{sv})", &title, &parent_id, &action, &iter);
 
@@ -54,7 +97,7 @@ sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
 	{
 		g_set_error (error, g_quark_from_static_string (SFCD_ERROR_DOMAIN), SFCD_ERROR_CREATION,
 					"SfcdDbusWrapper.Sfcd.New: could not allocate memory to create GtkFileChooserDialog.\n");
-		syslog (LOG_CRIT, "%s", (*error)->message);
+		syslog (LOG_CRIT, "%s", g_error_get_message (*error));
 	}
 	else
 	{
@@ -73,7 +116,9 @@ sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
     {
 		  g_set_error (error, g_quark_from_static_string (SFCD_ERROR_DOMAIN), SFCD_ERROR_CREATION,
 					  "SfcdDbusWrapper.Sfcd.New: could not allocate memory to create SandboxFileChooserDialog.\n");
-		  syslog (LOG_CRIT, "%s", (*error)->message);
+		  syslog (LOG_CRIT, "%s", g_error_get_message (*error));
+		  
+		  gtk_widget_destroy (dialog);
     }
     else
     {
@@ -82,21 +127,178 @@ sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
 	    
       g_mutex_lock (&cli->dialogsMutex);
 	    g_hash_table_insert (cli->dialogs, key, sfcd);
-	    syslog (LOG_DEBUG, "SfcdDbusWrapper.Sfcd.New: dialog '%s' ('%s') has just been created.\n",
-              *dialog_id, title);
-      
+      g_mutex_unlock (&cli->dialogsMutex);
+
       succeeded = TRUE;
     }
-
-    g_mutex_unlock (&cli->dialogsMutex);
 	}
 
+  return succeeded;
+}
+
+//TODO destroy
+
+gboolean
+sfcd_dbus_wrapper_sfcd_get_state (SandboxUtilsClient *cli,
+                                  GVariant           *parameters,
+                                  gint32             *state,
+                                  GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  
+  g_return_val_if_fail (cli != NULL, FALSE);
+  g_return_val_if_fail (state != NULL, FALSE);
+
+  g_variant_get (parameters, "(&s)", &dialog_id);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    *state = sfcd_get_state (sfcd);
+    succeeded = (*state != SFCD_WRONG_STATE);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+  
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_run (SandboxUtilsClient *cli,
+                            GVariant           *parameters,
+                            GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&s)", &dialog_id);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded = sfcd_run (sfcd, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+  
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_present (SandboxUtilsClient *cli,
+                                GVariant           *parameters,
+                                GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&s)", &dialog_id);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded = sfcd_present (sfcd, error);
+    
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+  
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_cancel_run (SandboxUtilsClient *cli,
+                                   GVariant           *parameters,
+                                   GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&s)", &dialog_id);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded = sfcd_cancel_run (sfcd, error);
+    
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+  
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_action (SandboxUtilsClient *cli,
+                                   GVariant           *parameters,
+                                   GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gint32                action;
+  
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&si)", &dialog_id, &action);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_action (sfcd, action, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+  
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_get_action (SandboxUtilsClient *cli,
+                                   GVariant           *parameters,
+                                   gint32             *action,
+                                   GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  
+  g_return_val_if_fail (cli != NULL, FALSE);
+  g_return_val_if_fail (action != NULL, FALSE);
+
+  g_variant_get (parameters, "(&s)", &dialog_id);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded = sfcd_get_action (sfcd, &action, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+  
   return succeeded;
 }
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+/* ...
+ * ...
+ * @user_data: pointer to #SandboxUtilsClient instance
+ */
 static void
 sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
                                      const gchar           *sender,
@@ -111,142 +313,115 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
   // running server (less dependable this way). We might change that in the
   // future after the code has been severely hardened.
 
-  //TODO new client? should be some sort of greetings during which it sends me
-  // its STDOUT and STDERR. This will allow transparent composition of error
-  // messages
-
-
-  gboolean            ret    = FALSE;
+  gboolean            good   = FALSE;
   GError             *err    = NULL;
-  SandboxUtilsClient *client = _get_client ();
+  SandboxUtilsClient *cli    = _get_client (); //TODO use user_data later on
 
   if (g_strcmp0 (method_name, "New") == 0)
   {
     gchar        *dialog_id = NULL;
 
-    ret = sfcd_dbus_wrapper_sfcd_new (client,
-                                      parameters,
-                                      &dialog_id,
-                                      &err);
-    if (ret)
-      g_dbus_method_invocation_return_value (invocation, 
-                                             g_variant_new ("(s)", dialog_id));
+    if (sfcd_dbus_wrapper_sfcd_new (cli, parameters, &dialog_id, &err))
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(s)", dialog_id));
+      
     if (dialog_id)
       g_free (dialog_id);
   }
   /*
   else if (g_strcmp0 (method_name, "Destroy") == 0)
   {
-    ret = sfcd_dbus_wrapper_sfcd_destroy (parameters, &err);
+    good = sfcd_dbus_wrapper_sfcd_destroy (parameters, &err);
 
-    if (ret)
+    if (good)
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
+  */
   else if (g_strcmp0 (method_name, "GetState") == 0)
   {
     gint32 state = -1;
 
-    ret = sfcd_dbus_wrapper_sfcd_get_state (parameters, 
-                                                        &state,
-                                                        &err);
-    if (ret)
-      g_dbus_method_invocation_return_value (invocation, 
-                                             g_variant_new ("(i)", state));
+    if (sfcd_dbus_wrapper_sfcd_get_state (cli, parameters, &state, &err))
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(i)", state));
   }
   else if (g_strcmp0 (method_name, "Run") == 0)
   {
-    ret = sfcd_dbus_wrapper_sfcd_run (connection,
-                                                  sender,
-                                                  object_path,
-                                                  interface_name,
-                                                  parameters,
-                                                  &err);
-    if (ret)
-      g_dbus_method_invocation_return_value (invocation, NULL);
-  }
-  else if (g_strcmp0 (method_name, "CancelRun") == 0)
-  {
-    ret = sfcd_dbus_wrapper_sfcd_cancel_run (parameters, 
-                                                         &err);
-    if (ret)
+    if (sfcd_dbus_wrapper_sfcd_run (cli, parameters, &err))
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "Present") == 0)
   {
-    ret = sfcd_dbus_wrapper_sfcd_present (parameters, 
-                                                      &err);
-    if (ret)
+    if (sfcd_dbus_wrapper_sfcd_present (cli, parameters, &err))
+      g_dbus_method_invocation_return_value (invocation, NULL);
+  }
+  else if (g_strcmp0 (method_name, "CancelRun") == 0)
+  {
+    if (sfcd_dbus_wrapper_sfcd_cancel_run (cli, parameters, &err))
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "SetAction") == 0)
   { 
-    ret = sfcd_dbus_wrapper_sfcd_set_action (parameters, &err);
-
-    if (ret)
+    if (sfcd_dbus_wrapper_sfcd_set_action (cli, parameters, &err))
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "GetAction") == 0)
   {
     gint32 action = -1;
 
-    ret = sfcd_dbus_wrapper_sfcd_get_action (parameters, 
-                                                         &action,
-                                                         &err);
-    if (ret)
-      g_dbus_method_invocation_return_value (invocation, 
-                                             g_variant_new ("(i)", action));
+    if (sfcd_dbus_wrapper_sfcd_get_action (cli, parameters, &action, &err))
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(i)", action));
   }
+  /*
   else if (g_strcmp0 (method_name, "SetLocalOnly") == 0)
   { 
-    ret = sfcd_dbus_wrapper_sfcd_set_local_only (parameters, &err);
+    good = sfcd_dbus_wrapper_sfcd_set_local_only (parameters, &err);
 
-    if (ret)
+    if (good)
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "GetLocalOnly") == 0)
   {
     gboolean local_only;
 
-    ret = sfcd_dbus_wrapper_sfcd_get_local_only (parameters, 
+    good = sfcd_dbus_wrapper_sfcd_get_local_only (parameters, 
                                                              &local_only,
                                                              &err);
-    if (ret)
+    if (good)
       g_dbus_method_invocation_return_value (invocation, 
                                              g_variant_new ("(b)", local_only));
   }
   else if (g_strcmp0 (method_name, "SetSelectMultiple") == 0)
   { 
-    ret = sfcd_dbus_wrapper_sfcd_set_select_multiple (parameters, &err);
+    good = sfcd_dbus_wrapper_sfcd_set_select_multiple (parameters, &err);
 
-    if (ret)
+    if (good)
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "GetSelectMultiple") == 0)
   {
     gboolean select_multiple;
 
-    ret = sfcd_dbus_wrapper_sfcd_get_select_multiple (parameters, 
+    good = sfcd_dbus_wrapper_sfcd_get_select_multiple (parameters, 
                                                                   &select_multiple,
                                                                   &err);
-    if (ret)
+    if (good)
       g_dbus_method_invocation_return_value (invocation, 
                                              g_variant_new ("(b)", select_multiple));
   }
   else if (g_strcmp0 (method_name, "SetShowHidden") == 0)
   { 
-    ret = sfcd_dbus_wrapper_sfcd_set_show_hidden (parameters, &err);
+    good = sfcd_dbus_wrapper_sfcd_set_show_hidden (parameters, &err);
 
-    if (ret)
+    if (good)
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "GetShowHidden") == 0)
   {
     gboolean show_hidden;
 
-    ret = sfcd_dbus_wrapper_sfcd_get_show_hidden (parameters, 
+    good = sfcd_dbus_wrapper_sfcd_get_show_hidden (parameters, 
                                                                   &show_hidden,
                                                                   &err);
-    if (ret)
+    if (good)
       g_dbus_method_invocation_return_value (invocation, 
                                              g_variant_new ("(b)", show_hidden));
   }
@@ -258,7 +433,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
   // TODO: distinguish security policy errors from GTK errors
   // FIXME: never ever put client-controlled strings into error without
   // neutralising the format (doesnt occur on GDBus-obtained strings though)
-  if (err)
+  else if (err)
   {
       g_dbus_method_invocation_return_error (invocation,
                                              G_DBUS_ERROR,
@@ -267,10 +442,10 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
                                              err->message);
       g_error_free (err);
   }
-  else if (!ret)
+  else
   {
 		syslog (LOG_CRIT,
-		        "SfcdDbusWrapper.Dbus.CallHandler: the '%s' handler failed but did not return any error message (this should never happen, please report a bug).\n",
+		        "SfcdDbusWrapper.Dbus.CallHandler: method '%s' was not handled properly but no error message is available (this should never happen, please report a bug).\n",
 		        method_name);
   }
 }

@@ -13,7 +13,9 @@
 
 #include "sandboxutilsclientmanager.h"
 
-//TODO connect/disconnect methods?
+//TODO connect/disconnect methods where a client introduces themselves by giving
+// access to their STDOUT and STDERR fds. Later we'll use that to help them log
+// what happens to their calls to sandboxutilsd.
 
 static SandboxUtilsClient *
 sandbox_utils_client_new ()

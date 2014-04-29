@@ -16,4 +16,13 @@
 #define SANDBOXUTILS_IFACE "org.mupuf.SandboxUtils"
 #define SANDBOXUTILS_PATH "/org/mupuf/SandboxUtils"
 
+inline const gchar *
+g_error_get_message (GError *err)
+{
+  if (err)
+    return err->message;
+  else
+    return "(no error)";
+}
+
 #endif /* __SANDBOX_UTILS_COMMON_H__ */

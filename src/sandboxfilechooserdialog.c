@@ -63,6 +63,7 @@ sfcd_dispose (GObject* object)
 
   if (self->priv->dialog)
   {
+    // Remove our own ref and then destroy the dialog
     g_object_unref (self->priv->dialog);
     gtk_widget_destroy (self->priv->dialog);
   }
@@ -76,7 +77,6 @@ sfcd_dispose (GObject* object)
 
   G_OBJECT_CLASS (sfcd_parent_class)->dispose (object);
 
-  g_free (self);  // Another double-free crash ahead
 }
 
 static void
@@ -129,9 +129,13 @@ sfcd_new (GtkWidget *dialog)
   g_assert (sfcd != NULL);
 
   sfcd->priv->dialog = dialog;
-  g_object_ref_sink (dialog);
-  //TODO take ownership of dialog and reference it
 
+  // Reference the dialog to make sure it stays with us until the end
+  g_object_ref (dialog);
+
+  syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
+              sfcd->id, gtk_window_get_title (GTK_WINDOW (dialog)));
+  
   return sfcd;
 }
 
@@ -146,7 +150,7 @@ sfcd_destroy (SandboxFileChooserDialog *self)
 SfcdRunState
 sfcd_get_state (SandboxFileChooserDialog *self)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), 0);
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), SFCD_WRONG_STATE);
 
   return self->priv->state;
 }
@@ -154,9 +158,18 @@ sfcd_get_state (SandboxFileChooserDialog *self)
 const gchar *
 sfcd_get_state_printable  (SandboxFileChooserDialog *self)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), 0);
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), SfcdRunStatePrintable[SFCD_WRONG_STATE]);
 
   return SfcdRunStatePrintable [self->priv->state];
+}
+
+const gchar *
+sfcd_get_dialog_title (SandboxFileChooserDialog *self)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), NULL);
+  g_return_val_if_fail (GTK_IS_FILE_CHOOSER_DIALOG (self->priv->dialog), NULL);
+
+  return gtk_window_get_title (GTK_WINDOW (self->priv->dialog));
 }
 
 gboolean
@@ -290,7 +303,6 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     g_object_unref (d->sfcd);
 //    _sandbox_file_chooser_dialog_destroy (d->sfcd, d->sfcd->id); //FIXME
   }
-
   else
   {
     // Well, should still be running at that point!
@@ -338,7 +350,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
   g_mutex_unlock (&d->sfcd->priv->stateMutex);
 
   // Done running, we can relax that extra reference that protected our dialog
-  g_object_unref (d->sfcd->priv->dialog);
+  g_object_unref (d->sfcd);
 
   g_free (d); //FIXME move to priv -- code here will look better
 
@@ -378,9 +390,10 @@ sfcd_run (SandboxFileChooserDialog *self,
             sfcd_get_state_printable (self),
             SfcdRunStatePrintable [SFCD_RUNNING]);
 
-    // Now running, prevent destruction
+    // Now running, prevent destruction - refs are used to allow keeping the 
+    // dialog alive until the very end!
     self->priv->state = SFCD_RUNNING;
-    g_object_ref (self->priv->dialog);
+    g_object_ref (self);
             
     // Data shared between Run call and the idle func running the dialog
     SfcdRunFuncData *d = g_malloc (sizeof (SfcdRunFuncData));
@@ -492,7 +505,7 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
   else
   {
     syslog (LOG_DEBUG,
-            "SandboxFileChooserDialog.CancelRun: dialog '%s' ('%s') being cancelled.\n",
+            "SandboxFileChooserDialog.CancelRun: dialog '%s' ('%s') is about to be cancelled.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
