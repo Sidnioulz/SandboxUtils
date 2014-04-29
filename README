@@ -3,7 +3,5 @@ SandboxUtils
 
 Utilities for accessing resources from within a Linux userland sandbox, through DBus
 
-Typical test commands for server:
-gdbus call --session --dest org.mupuf.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxFileChooserDialog.New "Terrible Choices" "FrogMaster" 2 "{'Blue Pill': <3>, 'Red Pill': <0>}"
-gdbus call --session --dest org.mupuf.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxFileChooserDialog.Run <dialog id>
-
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.New "Terrible Choices" "FrogMaster" 2 "{'Blue Pill': <3>, 'Red Pill': <0>}"
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id>

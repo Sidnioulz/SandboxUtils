@@ -1,3 +1,30 @@
+2014-04-28  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * Makefile.am: Refactored the app and renamed it sandboxutilsd.
+    
+    * sandboxfilechooserdialog.c, sandboxfilechooserdialog.h: GObject version of
+    SandboxFileChooserDialog which allows for leaner code and better thread
+    safety management, with an incomplete API (about as much as 0.2 available).
+    
+    * sandboxfilechooserdialogdbuswrapper.c, sandboxfilechooserdialogdbuswrapper.h:
+    Headers for a wrapper to the SFCD class, which handles the DBus interface
+    owning, receiving method calls and dispatching them to the actual SFCD
+    objects. Currently uses a unique global client structure to store dialogs.
+    
+    * sandboxutilsclientmanager.c, sandboxutilsclientmanager.h: A placeholder
+    for future client-related code, including managing a unique client across
+    multiple DBus interfaces (SFCD and future widgets) and per-client security
+    limits.
+
+    * sandboxutilscommon.h: Name and version of app, name of base interface.
+    
+    * sandboxutilsd.c: Actual daemon, which sets up the watchdog, inits syslog,
+    calls the DBus wrappers to get hold of interfaces and creates the temporary
+    unique global client.
+    
+    * sandboxutilsmarshals.c, sandboxutilsmarshals.h, sandboxutilsmarshals.list:
+    Marshals for my custom Gobjects signal, and a list to regenerate them.
+
 2014-04-27  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
     * server.*: API changes, supporting states, running, cancelling, creating
