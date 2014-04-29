@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.61)
 AC_INIT(sfad-server, 0.2, sidnioulz@gmail.com)
-AC_CONFIG_SRCDIR([src/server.c])
+AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
