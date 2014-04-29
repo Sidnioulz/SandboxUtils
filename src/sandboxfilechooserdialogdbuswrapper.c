@@ -40,13 +40,13 @@ sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
   const gint32  action;
   GVariantIter *iter;
   GVariant     *item;
-  
+
   g_return_val_if_fail (cli!=NULL, FALSE);
   g_return_val_if_fail (dialog_id!=NULL, FALSE);
   g_return_val_if_fail (error!=NULL, FALSE);
 
   g_variant_get (parameters, "(&ssia{sv})", &title, &parent_id, &action, &iter);
-  
+
   GtkWidget *dialog = gtk_file_chooser_dialog_new (title, NULL, action, NULL, NULL);
 
   // Most likely memory limits
@@ -66,9 +66,9 @@ sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
       g_variant_get (item, "{sv}", &key, &value);
       gtk_dialog_add_button (GTK_DIALOG (dialog), key, g_variant_get_int32 (value));
     }
-    
+
     SandboxFileChooserDialog *sfcd = sfcd_new (dialog);
-    
+
     if (sfcd==NULL)
     {
 		  g_set_error (error, g_quark_from_static_string (SFCD_ERROR_DOMAIN), SFCD_ERROR_CREATION,
@@ -87,7 +87,7 @@ sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
       
       succeeded = TRUE;
     }
-    
+
     g_mutex_unlock (&cli->dialogsMutex);
 	}
 
@@ -123,7 +123,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
   if (g_strcmp0 (method_name, "New") == 0)
   {
     gchar        *dialog_id = NULL;
-    
+
     ret = sfcd_dbus_wrapper_sfcd_new (client,
                                       parameters,
                                       &dialog_id,
@@ -145,7 +145,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
   else if (g_strcmp0 (method_name, "GetState") == 0)
   {
     gint32 state = -1;
-  
+
     ret = sfcd_dbus_wrapper_sfcd_get_state (parameters, 
                                                         &state,
                                                         &err);
@@ -188,7 +188,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
   else if (g_strcmp0 (method_name, "GetAction") == 0)
   {
     gint32 action = -1;
-    
+
     ret = sfcd_dbus_wrapper_sfcd_get_action (parameters, 
                                                          &action,
                                                          &err);
@@ -206,7 +206,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
   else if (g_strcmp0 (method_name, "GetLocalOnly") == 0)
   {
     gboolean local_only;
-    
+
     ret = sfcd_dbus_wrapper_sfcd_get_local_only (parameters, 
                                                              &local_only,
                                                              &err);
@@ -224,7 +224,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
   else if (g_strcmp0 (method_name, "GetSelectMultiple") == 0)
   {
     gboolean select_multiple;
-    
+
     ret = sfcd_dbus_wrapper_sfcd_get_select_multiple (parameters, 
                                                                   &select_multiple,
                                                                   &err);
@@ -242,7 +242,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
   else if (g_strcmp0 (method_name, "GetShowHidden") == 0)
   {
     gboolean show_hidden;
-    
+
     ret = sfcd_dbus_wrapper_sfcd_get_show_hidden (parameters, 
                                                                   &show_hidden,
                                                                   &err);
@@ -250,10 +250,10 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
       g_dbus_method_invocation_return_value (invocation, 
                                              g_variant_new ("(b)", show_hidden));
   }
-  
+
   
   */
-  
+
   // Handle errors here -- will need attention later on (factorised for now)
   // TODO: distinguish security policy errors from GTK errors
   // FIXME: never ever put client-controlled strings into error without
@@ -345,7 +345,7 @@ static const gchar sfcd_introspection_xml[] =
 		  "</method>"
 	  "</interface>"
   "</node>";
-  
+
 static const GDBusInterfaceVTable sfcd_dbus_interface_vtable =
   {
     sfcd_dbus_wrapper_dbus_call_handler,
@@ -360,9 +360,9 @@ sfcd_dbus_on_bus_acquired (GDBusConnection *connection,
                            gpointer         user_data)
 {
   SfcdDbusWrapperInfo *info = user_data;
-  
+
   //TODO some syslogging
-  
+
   GError *error = NULL;
   // TODO in the future we'll provide a pointer to a global client table here
   // free_func will stay empty
@@ -397,10 +397,10 @@ sfcd_dbus_on_name_lost (GDBusConnection *connection,
                         gpointer         user_data)
 {
 //  syslog (LOG_CRIT, "'%s' was lost, shutting down the SandboxFileChooserDialog interface.\n");
-  
+
   //TODO finalise my sfcd dbus?
   //FIXME or should I rather reinitialise?
-  
+
   //  exit (EXIT_FAILURE);
 }
 
@@ -421,11 +421,11 @@ SfcdDbusWrapperInfo *
 sfcd_dbus_wrapper_dbus_init ()
 {
   SfcdDbusWrapperInfo *info = sfcd_dbus_info_new ();
-  
+
   // Quoting the doc: this is lazy!
   info->introspection_data = g_dbus_node_info_new_for_xml (sfcd_introspection_xml, NULL);
   g_assert (info->introspection_data != NULL);
-  
+
   // Register errors to shut DBus's mouth
   // register_dbus_errors (); //TODO
 
@@ -450,11 +450,11 @@ sfcd_dbus_wrapper_dbus_shutdown (gpointer data)
   SfcdDbusWrapperInfo *info = data;
 
   //TODO error checking?
-  
+
   // Clean up server
   g_bus_unown_name (info->owner_id);
   g_dbus_node_info_unref (info->introspection_data);
-  
+
   g_free (info);
 }
 

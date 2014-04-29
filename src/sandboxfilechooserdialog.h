@@ -49,8 +49,8 @@
  * ...TODO 
  *
  */
- 
- 
+
+
 typedef enum {
   SFCD_WRONG_STATE     = 0, // Unused, only to have a return value to get_state
   SFCD_CONFIGURATION   = 1,

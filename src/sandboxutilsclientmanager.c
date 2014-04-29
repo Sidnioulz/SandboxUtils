@@ -33,7 +33,7 @@ sandbox_utils_client_destroy (SandboxUtilsClient *cli)
   //TODO verify the client was disconnected properly
 
   g_mutex_clear (&cli->dialogsMutex);
-  
+
   if (cli->dialogs)
     g_hash_table_unref (cli->dialogs);
 
@@ -45,7 +45,7 @@ static SandboxUtilsClient **
 __get_client ()
 {
   static SandboxUtilsClient *cli = NULL;
-  
+
   return &cli;
 }
 
@@ -53,10 +53,10 @@ SandboxUtilsClient *
 _get_client ()
 {
   SandboxUtilsClient **cli = __get_client ();
-  
+
   if (!*cli)
     *cli = sandbox_utils_client_new ();
-  
+
   return *cli;
 }
 
@@ -64,7 +64,7 @@ void
 _reset_client ()
 {
   SandboxUtilsClient **cli = __get_client ();
-  
+
   if (*cli)
   {
     sandbox_utils_client_destroy (*cli);

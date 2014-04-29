@@ -34,18 +34,18 @@ static gboolean
 watchdog_func (gpointer data)
 {
   sd_notify(0, "WATCHDOG=1");
-  
+
   return TRUE;
 }
 
 static void
 signal_manager (int signal)
 {
-  syslog (LOG_DEBUG, NAME" received SIGINT, now shutting down...\n"); 
+  syslog (LOG_DEBUG, NAME" received SIGINT, now shutting down...\n");
 
   //TODO clean up memory, etc
 
-  exit(EXIT_SUCCESS);  
+  exit(EXIT_SUCCESS);
 }
 
 int
@@ -68,7 +68,7 @@ main (int argc, char *argv[])
 	memset (&action, 0, sizeof (struct sigaction));
   action.sa_handler = signal_manager;
   sigaction (SIGINT, &action, NULL);
-  
+
   // Open log
   openlog (NAME, LOG_PID | LOG_CONS | LOG_PERROR, LOG_USER);
   syslog (LOG_INFO, "Starting "NAME" version "VERSION"\n");
@@ -81,17 +81,17 @@ main (int argc, char *argv[])
 	
   // Notify systemd of readiness and start the loop
   loop = g_main_loop_new (NULL, FALSE);
-  g_timeout_add_seconds (10, watchdog_func, NULL);  
+  g_timeout_add_seconds (10, watchdog_func, NULL);
   sd_notify(0, "READY=1");
   g_main_loop_run (loop);
 
   // Clean up the client
   _reset_client ();
-  
+
   // Close the SandboxFileChooserDialog interface
   // sfcd_dbus_wrapper_dbus_shutdown (sfcd_wrapper);
   // XXX this might be done automatically, need to check before calling
-  
+
   // Shutdown the syslog log
   closelog ();
 

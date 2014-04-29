@@ -39,14 +39,14 @@ static void
 sfcd_init (SandboxFileChooserDialog *self)
 {
   self->priv = sfcd_get_instance_private (self);
-  
+
   self->priv->dialog      = NULL;
   self->priv->runSourceId = 0;
   self->priv->state       = SFCD_CONFIGURATION;
-  
+
   g_mutex_init (&self->priv->runMutex);
   g_mutex_init (&self->priv->stateMutex);
-  
+
   self->id = g_strdup_printf ("%p", self);
 }
 
@@ -54,7 +54,7 @@ static void
 sfcd_dispose (GObject* object)
 {
   SandboxFileChooserDialog *self = SANDBOX_FILE_CHOOSER_DIALOG (object);
- 
+
   g_mutex_clear (&self->priv->runMutex);
   g_mutex_clear (&self->priv->stateMutex);
 
@@ -66,16 +66,16 @@ sfcd_dispose (GObject* object)
     g_object_unref (self->priv->dialog);
     gtk_widget_destroy (self->priv->dialog);
   }
-    
+
   if (self->priv->runSourceId)
     g_source_remove (self->priv->runSourceId); //betting on a crash here
-    
+
   g_free (self->id);
 
   //FIXME try to g_free self->priv and see what happens
-  
+
   G_OBJECT_CLASS (sfcd_parent_class)->dispose (object);
- 
+
   g_free (self);  // Another double-free crash ahead
 }
 
@@ -104,17 +104,17 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
                     G_SIGNAL_RUN_FIRST,
                     0,
                     NULL, NULL,
-              		  sandboxutils_marshal_VOID__STRING_INT_INT_BOOLEAN,
-		                 G_TYPE_NONE, 4,
-		                G_TYPE_STRING,
-		                G_TYPE_INT,
-		                G_TYPE_INT,
-		                G_TYPE_BOOLEAN);
+                    sandboxutils_marshal_VOID__STRING_INT_INT_BOOLEAN,
+                     G_TYPE_NONE, 4,
+                    G_TYPE_STRING,
+                    G_TYPE_INT,
+                    G_TYPE_INT,
+                    G_TYPE_BOOLEAN);
 
- 
+
   /* Add private structure -- normally already done by macro? */
   // g_type_class_add_private (klass, sizeof (SandboxFileChooserDialogPrivate));
- 
+
   /* Hook finalization functions */
   g_object_class->dispose = sfcd_dispose; /* instance destructor, reverse of init */
   g_object_class->finalize = sfcd_finalize; /* class finalization, reverse of class init */
@@ -124,10 +124,10 @@ SandboxFileChooserDialog *
 sfcd_new (GtkWidget *dialog)
 {
   g_return_val_if_fail (GTK_IS_FILE_CHOOSER_DIALOG (dialog), NULL);
-  
+
   SandboxFileChooserDialog *sfcd = g_object_new (SANDBOX_TYPE_FILE_CHOOSER_DIALOG, NULL);
   g_assert (sfcd != NULL);
-  
+
   sfcd->priv->dialog = dialog;
   g_object_ref_sink (dialog);
   //TODO take ownership of dialog and reference it
@@ -139,7 +139,7 @@ void
 sfcd_destroy (SandboxFileChooserDialog *self)
 {
   g_return_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self));
-  
+
   g_object_unref (self);
 }
 
@@ -147,7 +147,7 @@ SfcdRunState
 sfcd_get_state (SandboxFileChooserDialog *self)
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), 0);
-  
+
   return self->priv->state;
 }
 
@@ -163,7 +163,7 @@ gboolean
 sfcd_is_running (SandboxFileChooserDialog *self)
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  
+
   return self->priv->state == SFCD_RUNNING;
 }
 
@@ -220,7 +220,7 @@ run_delete_handler (GtkDialog   *dialog,
                     gpointer     data)
 {
   SfcdRunFuncData *d = data;
-  
+
   shutdown_loop (d);
 
   return TRUE; /* Do not destroy */
@@ -241,19 +241,19 @@ gboolean
 _sfcd_run_func (gpointer data)
 {
   SfcdRunFuncData *d = (SfcdRunFuncData *) data;
-  
+
   g_return_val_if_fail (d != NULL, G_SOURCE_REMOVE);
   g_return_val_if_fail (d->sfcd != NULL, G_SOURCE_REMOVE);
-  
+
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   gdk_threads_leave ();
   g_main_loop_run (d->loop);
   gdk_threads_enter ();
 G_GNUC_END_IGNORE_DEPRECATIONS
-  
-	syslog (LOG_DEBUG, "SandboxFileChooserDialog._RunFunc: dialog '%s' ('%s') has finished running (return code is %d).\n",
+
+  syslog (LOG_DEBUG, "SandboxFileChooserDialog._RunFunc: dialog '%s' ('%s') has finished running (return code is %d).\n",
           d->sfcd->id, gtk_window_get_title (GTK_WINDOW (d->sfcd->priv->dialog)), d->response_id);
-  
+
   g_mutex_lock (&d->sfcd->priv->stateMutex);
 
   // Clean up signal handlers and loop
@@ -265,32 +265,32 @@ G_GNUC_END_IGNORE_DEPRECATIONS
   // Free the loop after handlers have been disconnected
   g_main_loop_unref (d->loop);
   d->loop = NULL;
-  
+
   // Needed to emit signals
   SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (d->sfcd);
-  
+
   // Destroying the dialog (via Destroy or the WM) results in a GTK_RESPONSE_DELETE_EVENT.
   // In such a case, we destroy the dialog and notify the client process.
   if (d->response_id == GTK_RESPONSE_DELETE_EVENT)
   {
     syslog (LOG_DEBUG, "SandboxFileChooserDialog._RunFunc: dialog '%s' ('%s') was marked for deletion while running, will be deleted.\n",
             d->sfcd->id, gtk_window_get_title (GTK_WINDOW (d->sfcd->priv->dialog)));
-    
+
     // Emit a signal that informs of the deletion
-	  g_signal_emit (d->sfcd,
-	                 klass->run_finished_signal,
-	                 0, 
-	                 d->sfcd->id,
-	                 d->response_id,
-	                 SFCD_WRONG_STATE,
-	                 TRUE);
-	  
+    g_signal_emit (d->sfcd,
+                   klass->run_finished_signal,
+                   0, 
+                   d->sfcd->id,
+                   d->response_id,
+                   SFCD_WRONG_STATE,
+                   TRUE);
+    
     // We drop our own reference to get the object destroyed. If no other method
     // is being called, then the object will reach a refcount of 0 and dispose.
     g_object_unref (d->sfcd);
-//	  _sandbox_file_chooser_dialog_destroy (d->sfcd, d->sfcd->id); //FIXME
+//    _sandbox_file_chooser_dialog_destroy (d->sfcd, d->sfcd->id); //FIXME
   }
-  
+
   else
   {
     // Well, should still be running at that point!
@@ -299,10 +299,10 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     // Dialog clean-up. TODO: have the compo manage this
     if (!d->was_modal)
       gtk_window_set_modal (GTK_WINDOW(d->sfcd->priv->dialog), FALSE);
-      
+
     // Client can now query and destroy the dialog -- hide it in the meantime
     gtk_widget_hide (d->sfcd->priv->dialog);
-    
+
     // According to the doc, could happen if dialog was destroyed. Ours can only be
     // destroyed via a delete-event though, so NONE shouldn't mean it's destroyed
     if (d->response_id == GTK_RESPONSE_NONE)
@@ -312,7 +312,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
               d->sfcd->id,
               gtk_window_get_title (GTK_WINDOW (d->sfcd->priv->dialog)),
               SfcdRunStatePrintable [SFCD_CONFIGURATION]);
-      
+
       d->sfcd->priv->state = SFCD_CONFIGURATION;
     }
     else
@@ -322,26 +322,26 @@ G_GNUC_END_IGNORE_DEPRECATIONS
               d->sfcd->id,
               gtk_window_get_title (GTK_WINDOW (d->sfcd->priv->dialog)),
               SfcdRunStatePrintable [SFCD_DATA_RETRIEVAL]);
-      
+
       d->sfcd->priv->state = SFCD_DATA_RETRIEVAL;
     }
-        
-	  g_signal_emit (d->sfcd,
-	                 klass->run_finished_signal,
-	                 0, 
-	                 d->sfcd->id,
-	                 d->response_id,
-	                 d->sfcd->priv->state,
-	                 FALSE);
+
+    g_signal_emit (d->sfcd,
+                   klass->run_finished_signal,
+                   0, 
+                   d->sfcd->id,
+                   d->response_id,
+                   d->sfcd->priv->state,
+                   FALSE);
   }
-  
+
   g_mutex_unlock (&d->sfcd->priv->stateMutex);
-  
+
   // Done running, we can relax that extra reference that protected our dialog
   g_object_unref (d->sfcd->priv->dialog);
 
   g_free (d); //FIXME move to priv -- code here will look better
-  
+
   return G_SOURCE_REMOVE;
 }
 
@@ -352,11 +352,11 @@ sfcd_run (SandboxFileChooserDialog *self,
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
   g_return_val_if_fail (error != NULL, FALSE);
-  
+
   gboolean succeeded = FALSE;
 
   g_mutex_lock (&self->priv->stateMutex);
-  
+
   // It doesn't make sense to call run when the dialog's already running
   if (sfcd_is_running (self))
   {
@@ -366,7 +366,7 @@ sfcd_run (SandboxFileChooserDialog *self,
                  "SandboxFileChooserDialog.Run: dialog '%s' ('%s') is already running.\n",
                  self->id,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
-  
+
     syslog (LOG_WARNING, "%s", (*error)->message);
   }
   else
@@ -408,7 +408,7 @@ sfcd_run (SandboxFileChooserDialog *self,
                                            "destroy",
                                            G_CALLBACK (run_destroy_handler),
                                            d);
-    
+
     // TODO tell the compo to make the dialog modal, if requested by the client
     if (!d->was_modal)
       gtk_window_set_modal (GTK_WINDOW (self->priv->dialog), TRUE);
@@ -416,14 +416,14 @@ sfcd_run (SandboxFileChooserDialog *self,
     // TODO tell the compo to show the dialog as if it were the client's child
     if (!gtk_widget_get_visible (GTK_WIDGET (self->priv->dialog)))
       gtk_widget_show (GTK_WIDGET (self->priv->dialog));    
-      
+
     syslog (LOG_DEBUG, "SandboxFileChooserDialog.Run: dialog '%s' ('%s') is about to run.\n",
           self->id, gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
     self->priv->runSourceId = gdk_threads_add_idle_full (G_PRIORITY_DEFAULT, _sfcd_run_func, d, NULL);
     succeeded = TRUE;
   }
-    
+
   g_mutex_unlock (&self->priv->stateMutex);
 
   return succeeded;
@@ -435,29 +435,29 @@ sfcd_present (SandboxFileChooserDialog  *self,
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
   g_return_val_if_fail (error != NULL, FALSE);
-  
+
   gboolean succeeded = FALSE;
-  
+
   g_mutex_lock (&self->priv->stateMutex);
-    
+
   if (!sfcd_is_running (self))
   {
-		g_set_error (error,
-		            g_quark_from_static_string (SFCD_ERROR_DOMAIN),
-		            SFCD_ERROR_FORBIDDEN_CHANGE,
-				        "SandboxFileChooserDialog.Present: dialog '%s' ('%s') is not running and cannot be presented.\n",
-				        self->id,
-				        gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
-	
-	  syslog (LOG_WARNING, "%s", (*error)->message);
+    g_set_error (error,
+                g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                SFCD_ERROR_FORBIDDEN_CHANGE,
+                "SandboxFileChooserDialog.Present: dialog '%s' ('%s') is not running and cannot be presented.\n",
+                self->id,
+                gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+    syslog (LOG_WARNING, "%s", (*error)->message);
   }
   else
   {
-	  syslog (LOG_DEBUG,
-	          "SandboxFileChooserDialog.Present: dialog '%s' ('%s') being presented.\n",
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.Present: dialog '%s' ('%s') being presented.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
-    
+
     gtk_window_present (GTK_WINDOW (self->priv->dialog));
     succeeded = TRUE;
   }
@@ -473,29 +473,29 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
   g_return_val_if_fail (error != NULL, FALSE);
-  
+
   gboolean succeeded = FALSE;
-  
+
   g_mutex_lock (&self->priv->stateMutex);
-    
+
   if (!sfcd_is_running (self))
   {
-		g_set_error (error,
-		            g_quark_from_static_string (SFCD_ERROR_DOMAIN),
-		            SFCD_ERROR_FORBIDDEN_CHANGE,
-				        "SandboxFileChooserDialog.CancelRun: dialog '%s' ('%s') is not running and cannot be cancelled.\n",
-				        self->id,
-				        gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
-	
-	  syslog (LOG_WARNING, "%s", (*error)->message);
+    g_set_error (error,
+                g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                SFCD_ERROR_FORBIDDEN_CHANGE,
+                "SandboxFileChooserDialog.CancelRun: dialog '%s' ('%s') is not running and cannot be cancelled.\n",
+                self->id,
+                gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+    syslog (LOG_WARNING, "%s", (*error)->message);
   }
   else
   {
-	  syslog (LOG_DEBUG,
-	          "SandboxFileChooserDialog.CancelRun: dialog '%s' ('%s') being cancelled.\n",
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.CancelRun: dialog '%s' ('%s') being cancelled.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
-    
+
     // This is enough to cause the run method to issue a GTK_RESPONSE_NONE
     gtk_widget_hide (self->priv->dialog);  
     succeeded = TRUE;
@@ -513,11 +513,11 @@ sfcd_set_action (SandboxFileChooserDialog  *self,
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
   g_return_val_if_fail (error != NULL, FALSE);
-  
+
   gboolean succeeded = FALSE;
-  
+
   g_mutex_lock (&self->priv->stateMutex);
-  
+
   if (sfcd_is_running (self))
   {
     g_set_error (error, 
@@ -527,7 +527,7 @@ sfcd_set_action (SandboxFileChooserDialog  *self,
                  self->id,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  action);
-      
+
       syslog (LOG_WARNING, "%s", (*error)->message);
   }
   else
@@ -542,16 +542,16 @@ sfcd_set_action (SandboxFileChooserDialog  *self,
 
     self->priv->state = SFCD_CONFIGURATION;
     gtk_file_chooser_set_action (GTK_FILE_CHOOSER (self->priv->dialog), action);
-    
+
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.SetAction: dialog '%s' ('%s') now has action '%d'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             action);
-    
+
     succeeded = TRUE;
   }
-    
+
   g_mutex_unlock (&self->priv->stateMutex);
 
   return succeeded;
@@ -565,11 +565,11 @@ sfcd_get_action (SandboxFileChooserDialog *self,
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
   g_return_val_if_fail (result != NULL, FALSE);
   g_return_val_if_fail (error != NULL, FALSE);
-  
+
   gboolean succeeded = FALSE;
-  
+
   g_mutex_lock (&self->priv->stateMutex);
-    
+
   if (sfcd_is_running (self))
   {
     g_set_error (error,
@@ -578,22 +578,22 @@ sfcd_get_action (SandboxFileChooserDialog *self,
                  "SandboxFileChooserDialog.GetAction: dialog '%s' ('%s') is already running and cannot be queried.\n",
                  self->id,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
-      
+
       syslog (LOG_WARNING, "%s", (*error)->message);
   }
   else
   {
     *result = gtk_file_chooser_get_action (GTK_FILE_CHOOSER (self->priv->dialog));
-    
+
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetAction: dialog '%s' ('%s') has action '%d'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             *result);
-    
+
     succeeded = TRUE;
   }
-  
+
   g_mutex_unlock (&self->priv->stateMutex);
 
   return succeeded;

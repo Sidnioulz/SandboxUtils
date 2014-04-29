@@ -25,7 +25,7 @@ typedef struct _SandboxUtilsClient
 {
   GHashTable            *dialogs;
   const guint32          ownLimits;
-  const guint32          runLimits;   
+  const guint32          runLimits;
   GMutex                 dialogsMutex;
 } SandboxUtilsClient;
 
