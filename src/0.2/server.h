@@ -14,11 +14,7 @@
 #define _SUD_SERVER_H
 
 /* sud internals */
-#define NAME "sud"
-#define VERSION "0.2"
-
-#define SANDBOXUTILS_IFACE "org.mupuf.SandboxUtils"
-#define SANDBOXUTILS_PATH "/org/mupuf/SandboxUtils"
+#include "sandboxutilscommon.h"
 
 //FIXME use sfcd's own files later on
 #define SFCD_IFACE "org.mupuf.SandboxFileChooserDialog"
