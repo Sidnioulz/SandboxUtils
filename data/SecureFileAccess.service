@@ -6,7 +6,7 @@ Requires=dbus.service
 [Service]
 Type=dbus
 BusName=org.mupuf.SecureFileAccess
-ExecStart=/home/steve/Development/gdbus-sfad/server/BUILD/bin/sfad
+ExecStart=/usr/local/bin/sfad
 KillMode=process
 Restart=always
 WatchdogSec=10
