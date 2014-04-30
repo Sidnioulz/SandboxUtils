@@ -16,6 +16,8 @@
 #define SANDBOXUTILS_IFACE "org.mupuf.SandboxUtils"
 #define SANDBOXUTILS_PATH "/org/mupuf/SandboxUtils"
 
+#define _B(foo) (foo? "true":"false")
+
 inline const gchar *
 g_error_get_message (GError *err)
 {
