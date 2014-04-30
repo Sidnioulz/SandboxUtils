@@ -1,14 +1,64 @@
-/* SandboxUtils -- Sandbox File Chooser Dialog definition
- * Copyright (c) Steve Dodier-Lazaro <sidnioulz@gmail.com>, 2014
- * 
- * Under GPLv3
- * 
- *** 
- * 
- * Class desc here
- * XXX this class describes ...
- * 
+/*
+ * sandboxfilechooserdialog.c: file chooser dialog for sandboxed apps
+ *
+ * Copyright (C) 2014 Steve Dodier-Lazaro <sidnioulz@gmail.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public License as
+ * published by the Free Software Foundation; either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Authors: Steve Dodier-Lazaro <sidnioulz@gmail.com>
  */
+
+/**
+ * SECTION:sandboxfilechooserdialog
+ * @Title: SandboxFileChooserDialog
+ * @Short_description: A dialog for choosing files meant to be manipulated over
+ * IPC by a sandboxed application
+ * @See_also: #GAppInfo
+ *
+ * #SandboxFileChooserDialog is an API for a file chooser dialog, based on the
+ * #GtkFileChooserDialog class and #GtkFileChooser interface. This dialog can be
+ * used to provide an interface to open files or directories, or to save files.
+ *
+ * It differs with other dialogs in that it has a #SfcdState among:
+ * 
+ * @SFCD_CONFIGURATION: initial state, in which the dialog's behavior, current
+ *   file and directory, etc. can be modified to match your application's needs
+ * @SFCD_RUNNING: switched to by calling #sfcd_run, in which the dialog cannot
+ *   be modified or queried and can only be cancelled (see #sfcd_cancel_run),
+ *   presented (#sfcd_present) or destroyed (#sfcd_destroy)
+ * @SFCD_DATA_RETRIEVAL: retrieval: switched to automatically after a successful
+ *   run, in which the dialog cannot be modified but the file(s) currently
+ *   selected can be queried as in the original #GtkFileChooserDialog
+ *
+ * States allow preventing attacks where an app would modify the dialog after
+ * the user made a selection and before they clicked on the dialog's appropriate
+ * button. If the dialog is modified or reused, it switches back to a previous 
+ * state in a rather conservative way, both to provide consistency on the
+ * restrictions it imposes and to allow some level of object reuse.
+ * 
+ * #SandboxFileChooserDialog is designed to be wrapped and exposed over an IPC
+ * mechanism. The process handling the class on behalf of the sandboxed app is
+ * in charge of managing access control to make sure the app can read and write
+ * files that were selected in the dialog. This is best done from within the IPC
+ * wrapper rather than by modifying this class.
+ *
+ * This class is thread-safe so long as you make sure to return from all of an
+ * instance's methods before destroying it.
+ * 
+ * Since: 0.3
+ */
+
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <syslog.h>
@@ -16,35 +66,49 @@
 #include "sandboxfilechooserdialog.h"
 #include "sandboxutilsmarshals.h"
 
-//TODO having the dialog modal locally should cause the compositor to handle this dialog
-//  as a child of the client
-
-/* TODO doc
- *
- *
- */
 struct _SandboxFileChooserDialogPrivate
 {
-  GtkWidget             *dialog;
-  gint                   runSourceId;
-  SfcdRunState           state;
-  GMutex                 runMutex;
-  GMutex                 stateMutex;
+  GtkWidget             *dialog;      /* pointer to the #GtkFileChooserDialog */
+  SfcdState              state;       /* state of the instance */
+  GMutex                 stateMutex;  /* a mutex to provide thread-safety */
 };
 
 
 G_DEFINE_TYPE_WITH_PRIVATE (SandboxFileChooserDialog, sfcd, G_TYPE_OBJECT)
 
+/*
+ * TODO refactor this list e.g. setters/getters for config, so that it's clear
+ * and easy to explain it
+ * TODO document functions a la GNOME, and add custom doc for state display
+ ***
+ * Generic Methods:
+ * Create -- initialises state to CONFIGURATION
+ * Destroy -- object no longer usable
+ * 
+ ***
+ * RUNNING Methods:
+ * Run -- switches state from * to RUNNING
+ * Present -- fails if not RUNNING
+ * CancelRun -- switches state from RUNNING to CONFIGURATION
+ * 
+ * RUNNING Signals:
+ * RunDone -- only occurs when running finishes, indicates state switches
+ * 
+ ***
+ * CONFIGURATION Methods:
+ * SetAction -- fails if RUNNING, switches state from DATA_RETRIEVAL to CONFIGURATION
+ * GetAction -- fails if RUNNING
+ * ...TODO 
+ *
+ */
 static void
 sfcd_init (SandboxFileChooserDialog *self)
 {
   self->priv = sfcd_get_instance_private (self);
 
   self->priv->dialog      = NULL;
-  self->priv->runSourceId = 0;
   self->priv->state       = SFCD_CONFIGURATION;
 
-  g_mutex_init (&self->priv->runMutex);
   g_mutex_init (&self->priv->stateMutex);
 
   self->id = g_strdup_printf ("%p", self);
@@ -55,11 +119,7 @@ sfcd_dispose (GObject* object)
 {
   SandboxFileChooserDialog *self = SANDBOX_FILE_CHOOSER_DIALOG (object);
 
-  g_mutex_clear (&self->priv->runMutex);
   g_mutex_clear (&self->priv->stateMutex);
-
-  //TODO remove reference to dialog, should only be one left (for gtk_widget_destroy)
-  //g_object_unref (self->priv->dialog);
 
   if (self->priv->dialog)
   {
@@ -68,15 +128,9 @@ sfcd_dispose (GObject* object)
     gtk_widget_destroy (self->priv->dialog);
   }
 
-  if (self->priv->runSourceId)
-    g_source_remove (self->priv->runSourceId); //betting on a crash here
-
   g_free (self->id);
 
-  //FIXME try to g_free self->priv and see what happens
-
   G_OBJECT_CLASS (sfcd_parent_class)->dispose (object);
-
 }
 
 static void
@@ -111,15 +165,21 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
                     G_TYPE_INT,
                     G_TYPE_BOOLEAN);
 
-
-  /* Add private structure -- normally already done by macro? */
-  // g_type_class_add_private (klass, sizeof (SandboxFileChooserDialogPrivate));
-
   /* Hook finalization functions */
   g_object_class->dispose = sfcd_dispose; /* instance destructor, reverse of init */
   g_object_class->finalize = sfcd_finalize; /* class finalization, reverse of class init */
 }
 
+
+/**
+ * sfcd_new:
+ * @dialog: a #GtkFileChooserDialog
+ * 
+ * Creates a new instance of #SandboxFileChooserDialog and associates @dialog
+ * with it. Fails if @dialog is %NULL. Free with #sfcd_destroy.
+ *
+ * Since: 0.3
+ **/
 SandboxFileChooserDialog *
 sfcd_new (GtkWidget *dialog)
 {
@@ -139,18 +199,28 @@ sfcd_new (GtkWidget *dialog)
   return sfcd;
 }
 
+/**
+ * sfcd_destroy:
+ * @self: a #SandboxFileChooserDialog
+ * 
+ * Destroys the given instance of #SandboxFileChooserDialog. Internally, this
+ * method only removes one reference to the dialog, so it may continue existing
+ * if you still have other references to it.
+ *
+ * Since: 0.3
+ **/
 void
 sfcd_destroy (SandboxFileChooserDialog *self)
 {
   g_return_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self));
 
-  syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been dropped by one.\n",
+  syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
               self->id, sfcd_get_dialog_title (self));
 
   g_object_unref (self);
 }
 
-SfcdRunState
+SfcdState
 sfcd_get_state (SandboxFileChooserDialog *self)
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), SFCD_WRONG_STATE);
@@ -161,9 +231,9 @@ sfcd_get_state (SandboxFileChooserDialog *self)
 const gchar *
 sfcd_get_state_printable  (SandboxFileChooserDialog *self)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), SfcdRunStatePrintable[SFCD_WRONG_STATE]);
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), SfcdStatePrintable[SFCD_WRONG_STATE]);
 
-  return SfcdRunStatePrintable [self->priv->state];
+  return SfcdStatePrintable [self->priv->state];
 }
 
 const gchar *
@@ -325,7 +395,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
               "SandboxFileChooserDialog._RunFunc: dialog '%s' ('%s') ran and returned no response, will return to '%s' state.\n",
               d->sfcd->id,
               gtk_window_get_title (GTK_WINDOW (d->sfcd->priv->dialog)),
-              SfcdRunStatePrintable [SFCD_CONFIGURATION]);
+              SfcdStatePrintable [SFCD_CONFIGURATION]);
 
       d->sfcd->priv->state = SFCD_CONFIGURATION;
     }
@@ -335,7 +405,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
               "SandboxFileChooserDialog._RunFunc: dialog '%s' ('%s') will now switch to '%s' state.\n",
               d->sfcd->id,
               gtk_window_get_title (GTK_WINDOW (d->sfcd->priv->dialog)),
-              SfcdRunStatePrintable [SFCD_DATA_RETRIEVAL]);
+              SfcdStatePrintable [SFCD_DATA_RETRIEVAL]);
 
       d->sfcd->priv->state = SFCD_DATA_RETRIEVAL;
     }
@@ -354,7 +424,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
   // Done running, we can relax that extra reference that protected our dialog
   g_object_unref (d->sfcd);
 
-  g_free (d); //FIXME move to priv -- code here will look better
+  g_free (d); // should move to priv -- code here will look better
 
   return G_SOURCE_REMOVE;
 }
@@ -390,7 +460,7 @@ sfcd_run (SandboxFileChooserDialog *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             sfcd_get_state_printable (self),
-            SfcdRunStatePrintable [SFCD_RUNNING]);
+            SfcdStatePrintable [SFCD_RUNNING]);
 
     // Now running, prevent destruction - refs are used to allow keeping the 
     // dialog alive until the very end!
@@ -435,7 +505,7 @@ sfcd_run (SandboxFileChooserDialog *self,
     syslog (LOG_DEBUG, "SandboxFileChooserDialog.Run: dialog '%s' ('%s') is about to run.\n",
           self->id, gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-    self->priv->runSourceId = gdk_threads_add_idle_full (G_PRIORITY_DEFAULT, _sfcd_run_func, d, NULL);
+    gdk_threads_add_idle_full (G_PRIORITY_DEFAULT, _sfcd_run_func, d, NULL);
     succeeded = TRUE;
   }
 
@@ -892,7 +962,6 @@ sfcd_get_show_hidden (SandboxFileChooserDialog *self,
 
   return succeeded;
 }
-
 gboolean
 sfcd_set_current_name (SandboxFileChooserDialog  *self,
                        const gchar               *name,
@@ -931,10 +1000,214 @@ sfcd_set_current_name (SandboxFileChooserDialog  *self,
     gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (self->priv->dialog), name);
 
     syslog (LOG_DEBUG,
-            "SandboxFileChooserDialog.SetCurrentName: dialog '%s' ('%s')'s current name now is '%s'.\n",
+            "SandboxFileChooserDialog.SetCurrentName: dialog '%s' ('%s')'s currently typed name is now '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             name);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_filename (SandboxFileChooserDialog  *self,
+                   const gchar               *filename,
+                   GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetFilename: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 filename);
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetFilename: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (self->priv->dialog), filename);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetFilename: dialog '%s' ('%s')'s current file name now is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            filename);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_current_folder (SandboxFileChooserDialog  *self,
+                         const gchar               *filename,
+                         GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetCurrentFolder: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 filename);
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetCurrentFolder: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (self->priv->dialog), filename);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetCurrentFolder: dialog '%s' ('%s')'s current folder now is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            filename);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_uri (SandboxFileChooserDialog  *self,
+              const gchar               *uri,
+              GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetUri: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 uri);
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetUri: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (self->priv->dialog), uri);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetUri: dialog '%s' ('%s')'s current file uri now is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            uri);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
+                             const gchar               *uri,
+                             GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetCurrentFolderUri: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 uri);
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetCurrentFolderUri: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_current_folder_uri (GTK_FILE_CHOOSER (self->priv->dialog), uri);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetCurrentFolderUri: dialog '%s' ('%s')'s current folder uri now is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            uri);
 
     succeeded = TRUE;
   }

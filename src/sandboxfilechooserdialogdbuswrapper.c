@@ -515,6 +515,102 @@ sfcd_dbus_wrapper_sfcd_set_current_name (SandboxUtilsClient *cli,
   return succeeded;
 }
 
+gboolean
+sfcd_dbus_wrapper_sfcd_set_filename (SandboxUtilsClient *cli,
+                                     GVariant           *parameters,
+                                     GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gchar                *filename   = NULL;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&ss)", &dialog_id, &filename);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_filename (sfcd, filename, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_current_folder (SandboxUtilsClient *cli,
+                                           GVariant           *parameters,
+                                           GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gchar                *filename   = NULL;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&ss)", &dialog_id, &filename);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_current_folder (sfcd, filename, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_uri (SandboxUtilsClient *cli,
+                                GVariant           *parameters,
+                                GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gchar                *uri        = NULL;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&ss)", &dialog_id, &uri);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_uri (sfcd, uri, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_current_folder_uri (SandboxUtilsClient *cli,
+                                               GVariant           *parameters,
+                                               GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gchar                *uri        = NULL;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&ss)", &dialog_id, &uri);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_current_folder_uri (sfcd, uri, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
 
 
 
@@ -640,6 +736,26 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
     if (sfcd_dbus_wrapper_sfcd_set_current_name (cli, parameters, &err))
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
+  else if (g_strcmp0 (method_name, "SetFileName") == 0)
+  { 
+    if (sfcd_dbus_wrapper_sfcd_set_filename (cli, parameters, &err))
+      g_dbus_method_invocation_return_value (invocation, NULL);
+  }
+  else if (g_strcmp0 (method_name, "SetCurrentFolder") == 0)
+  { 
+    if (sfcd_dbus_wrapper_sfcd_set_current_folder (cli, parameters, &err))
+      g_dbus_method_invocation_return_value (invocation, NULL);
+  }
+  else if (g_strcmp0 (method_name, "SetUri") == 0)
+  { 
+    if (sfcd_dbus_wrapper_sfcd_set_uri (cli, parameters, &err))
+      g_dbus_method_invocation_return_value (invocation, NULL);
+  }
+  else if (g_strcmp0 (method_name, "SetCurrentFolderUri") == 0)
+  { 
+    if (sfcd_dbus_wrapper_sfcd_set_current_folder_uri (cli, parameters, &err))
+      g_dbus_method_invocation_return_value (invocation, NULL);
+  }
 
   // Handle errors here -- will need attention later on (factorised for now)
   // TODO: distinguish security policy errors from GTK errors
@@ -731,6 +847,22 @@ static const gchar sfcd_introspection_xml[] =
 		  "<method name='SetCurrentName'>"
 			  "<arg type='s' name='dialog_id' direction='in' />"
 			  "<arg type='s' name='name' direction='in' />"
+		  "</method>"
+		  "<method name='SetFilename'>"
+			  "<arg type='s' name='dialog_id' direction='in' />"
+			  "<arg type='s' name='filename' direction='in' />"
+		  "</method>"
+		  "<method name='SetCurrentFolder'>"
+			  "<arg type='s' name='dialog_id' direction='in' />"
+			  "<arg type='s' name='filename' direction='in' />"
+		  "</method>"
+		  "<method name='SetUri'>"
+			  "<arg type='s' name='dialog_id' direction='in' />"
+			  "<arg type='s' name='uri' direction='in' />"
+		  "</method>"
+		  "<method name='SetCurrentFolderUri'>"
+			  "<arg type='s' name='dialog_id' direction='in' />"
+			  "<arg type='s' name='uri' direction='in' />"
 		  "</method>"
 	  "</interface>"
   "</node>";

@@ -1,76 +1,84 @@
-/* SandboxUtils -- Sandbox File Chooser Dialog definition
- * Copyright (c) Steve Dodier-Lazaro <sidnioulz@gmail.com>, 2014
- * 
- * Under GPLv3
- * 
- *** 
- * 
- * Class desc here
- * XXX this class describes ...
- * 
+/*
+ * sandboxfilechooserdialog.c: file chooser dialog for sandboxed apps
+ *
+ * Copyright (C) 2014 Steve Dodier-Lazaro <sidnioulz@gmail.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public License as
+ * published by the Free Software Foundation; either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Authors: Steve Dodier-Lazaro <sidnioulz@gmail.com>
  */
+
 #ifndef __SANDBOX_FILE_CHOOSER_DIALOG_H__
 #define __SANDBOX_FILE_CHOOSER_DIALOG_H__
 
 #include <glib-object.h>
 #include <gtk/gtk.h>
+
 #include "sandboxutilscommon.h"
+
+G_BEGIN_DECLS
 
 #define SFCD_IFACE SANDBOXUTILS_IFACE".SandboxFileChooserDialog"
 #define SFCD_ERROR_DOMAIN SFCD_IFACE".Error"
 
-
-/* Dialog running state - this is used to prevent forms of abuse when the dialog
- * is running. A dialog is created at CONFIGURATION state, configured by the
- * client, run (during which it is in RUNNING state) and then switched to the
- * DATA_RETRIEVAL state, during which the client reads the file(s) selected by 
- * the user and has access to them. If the dialog is modified or reused, it
- * switches back to a previous state and query functions cannot be called until
- * it successfully runs again.
- * 
- * TODO refactor this list e.g. setters/getters for config, so that it's clear
- * and easy to explain it
- * TODO document functions a la GNOME, and add custom doc for state display
- ***
- * Generic Methods:
- * Create -- initialises state to CONFIGURATION
- * Destroy -- object no longer usable
- * 
- ***
- * RUNNING Methods:
- * Run -- switches state from * to RUNNING
- * Present -- fails if not RUNNING
- * CancelRun -- switches state from RUNNING to CONFIGURATION
- * 
- * RUNNING Signals:
- * RunDone -- only occurs when running finishes, indicates state switches
- * 
- ***
- * CONFIGURATION Methods:
- * SetAction -- fails if RUNNING, switches state from DATA_RETRIEVAL to CONFIGURATION
- * GetAction -- fails if RUNNING
- * ...TODO 
+/**
+ * SfcdState:
+ * @SFCD_WRONG_STATE: Indicates the dialog was destroyed or a bug was detected.
+ * @SFCD_CONFIGURATION: Indicates the dialog can be modified and configured
+ *  prior to being displayed.
+ * @SFCD_RUNNING: Indicates the dialog is being displayed and cannot be modified
+ *  or queried.
+ * @SFCD_DATA_RETRIEVAL: Indicates the dialog successfully ran and the selection
+ *  of the user can now be retrieved.
  *
+ * Describes the current state of a #SandboxFileChooserDialog.
  */
-
-
 typedef enum {
-  SFCD_WRONG_STATE     = 0, // Unused, only to have a return value to get_state
+  SFCD_WRONG_STATE     = 0, /* Unused, only to have a fallback state */
   SFCD_CONFIGURATION   = 1,
   SFCD_RUNNING         = 2,
   SFCD_DATA_RETRIEVAL  = 3,
-} SfcdRunState;
+} SfcdState;
 
+/**
+ * SfcdStatePrintable:
+ * An array of string descriptions for the states of a #SandboxFileChooserDialog.
+ * You can index this array with an instance of #SfcdState to obtain a printable
+ * description of this instance.
+ */
 static const
-gchar *SfcdRunStatePrintable[5] = {"Wrong State (an error occurred)",
-                                   "Configuration",
-                                   "Running",
-                                   "Data Retrieval",
-                                   NULL};
-                                   
+gchar *SfcdStatePrintable[5] = {"Wrong State (an error occurred)",
+                                "Configuration",
+                                "Running",
+                                "Data Retrieval",
+                                NULL};
+                                 
 
-/* Error codes - used to distinguish between families of errors when misusing
- * the sfcd methods.
+/**
+ * SfcdErrorCode:
+ * @SFCD_ERROR_CREATION: Occurs when a dialog could not be created.
+ * @SFCD_ERROR_LOOKUP: Occurs when a dialog could not be found in external
+ *  storage. Not used within #SandboxFileChooserDialog.
+ * @SFCD_ERROR_FORBIDDEN_CHANGE: Occurs when one attempts to modify a dialog
+ *  when not allowed by its current state. See #SfcdState.
+ * @SFCD_ERROR_FORBIDDEN_QUERY: Occurs when one attempts to obtain information
+ *  from a dialog when not allowed by its current state. See #SfcdState.
+ * @SFCD_ERROR_FORBIDDEN_QUERY: 
+ * @SFCD_ERROR_UNKNOWN:
+ *
+ * Describes an error related to the manipulation of a
+ * #SandboxFileChooserDialog instance.
  */
 typedef enum {
   SFCD_ERROR_CREATION,
@@ -106,9 +114,7 @@ struct _SandboxFileChooserDialogClass
   guint run_finished_signal;
 };
 
-/* used by SANDBOX_TYPE_FILE_CHOOSER_DIALOG */
 GType sfcd_get_type (void);
-
 
 
 /* GENERIC METHODS */
@@ -118,7 +124,7 @@ sfcd_new (GtkWidget *dialog);
 void
 sfcd_destroy (SandboxFileChooserDialog *self);
 
-SfcdRunState
+SfcdState
 sfcd_get_state (SandboxFileChooserDialog *self);
 
 const gchar *
@@ -218,6 +224,29 @@ sfcd_set_current_name (SandboxFileChooserDialog  *self,
                        const gchar               *name,
                        GError                   **error);
 
+gboolean
+sfcd_set_filename (SandboxFileChooserDialog  *self,
+                   const gchar               *filename,
+                   GError                   **error);
+
+gboolean
+sfcd_set_current_folder (SandboxFileChooserDialog  *self,
+                         const gchar               *filename,
+                         GError                   **error);
+
+gboolean
+sfcd_set_uri (SandboxFileChooserDialog  *self,
+              const gchar               *uri,
+              GError                   **error);
+
+gboolean
+sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
+                             const gchar               *uri,
+                             GError                   **error);
+
+
+
+
 /* 
  * Proposed API changes
  * _____________________________________________________________________________
@@ -283,11 +312,6 @@ sfcd_set_current_name (SandboxFileChooserDialog  *self,
 /*
 
 // Configuration
-void	gtk_file_chooser_set_current_name ()
-gboolean	gtk_file_chooser_set_filename ()
-gboolean	gtk_file_chooser_set_current_folder ()
-gboolean	gtk_file_chooser_set_uri ()
-gboolean	gtk_file_chooser_set_current_folder_uri ()
 void	gtk_file_chooser_add_filter ()
 void	gtk_file_chooser_remove_filter ()
 GSList *	gtk_file_chooser_list_filters ()
@@ -318,9 +342,8 @@ GSList *	gtk_file_chooser_get_files ()
 
 
 
-
-
-
+// TODO: having the dialog modal locally should cause the compositor
+//       to handle it as a modal child of the client
 
 //TODO check which signals are allowed
 //GtkFileChooserConfirmation	confirm-overwrite	Run Last    // TODO implement
@@ -329,6 +352,8 @@ GSList *	gtk_file_chooser_get_files ()
 //void	selection-changed	Run Last                          // Not exported, forbidden info
 //void	update-preview	Run Last                            // TODO new architecture for widget preview
 
-//TODO rest of the GtkFileChooserDialog API -- should be quick!
+
+
+G_END_DECLS
 
 #endif /* __SANDBOX_FILE_CHOOSER_DIALOG_H__ */
