@@ -535,7 +535,7 @@ sfcd_set_action (SandboxFileChooserDialog  *self,
 
   if (sfcd_is_running (self))
   {
-    g_set_error (error, 
+    g_set_error (error,
                  g_quark_from_static_string (SFCD_ERROR_DOMAIN),
                  SFCD_ERROR_FORBIDDEN_CHANGE,
                  "SandboxFileChooserDialog.SetAction: dialog '%s' ('%s') is already running and cannot be modified (parameter was %d).\n",
@@ -605,6 +605,336 @@ sfcd_get_action (SandboxFileChooserDialog *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             *result);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_local_only (SandboxFileChooserDialog  *self,
+                     gboolean                   local_only,
+                     GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetLocalOnly: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 _B (local_only));
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetLocalOnly: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (self->priv->dialog), local_only);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetLocalOnly: dialog '%s' ('%s') now has local-only '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (local_only));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_local_only (SandboxFileChooserDialog *self,
+                    gboolean                 *result,
+                    GError                  **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (result != NULL, FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_QUERY,
+                 "SandboxFileChooserDialog.GetLocalOnly: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    *result = gtk_file_chooser_get_local_only (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetLocalOnly: dialog '%s' ('%s') has local-only '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (*result));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_select_multiple (SandboxFileChooserDialog  *self,
+                     gboolean                   select_multiple,
+                     GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetSelectMultiple: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 _B (select_multiple));
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetSelectMultiple: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_select_multiple (GTK_FILE_CHOOSER (self->priv->dialog), select_multiple);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetSelectMultiple: dialog '%s' ('%s') now has select-multiple '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (select_multiple));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_select_multiple (SandboxFileChooserDialog *self,
+                    gboolean                 *result,
+                    GError                  **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (result != NULL, FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_QUERY,
+                 "SandboxFileChooserDialog.GetSelectMultiple: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    *result = gtk_file_chooser_get_select_multiple (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetSelectMultiple: dialog '%s' ('%s') has select-multiple '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (*result));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_show_hidden (SandboxFileChooserDialog  *self,
+                      gboolean                   show_hidden,
+                      GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetShowHidden: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 _B (show_hidden));
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetShowHidden: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_show_hidden (GTK_FILE_CHOOSER (self->priv->dialog), show_hidden);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetShowHidden: dialog '%s' ('%s') now has show-hidden '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (show_hidden));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_show_hidden (SandboxFileChooserDialog *self,
+                     gboolean                 *result,
+                     GError                  **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (result != NULL, FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_QUERY,
+                 "SandboxFileChooserDialog.GetShowHidden: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    *result = gtk_file_chooser_get_show_hidden (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetShowHidden: dialog '%s' ('%s') has show-hidden '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (*result));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_current_name (SandboxFileChooserDialog  *self,
+                       const gchar               *name,
+                       GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetCurrentName: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 name);
+
+      syslog (LOG_WARNING, "%s", (*error)->message);
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetCurrentName: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (self->priv->dialog), name);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetCurrentName: dialog '%s' ('%s')'s current name now is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            name);
 
     succeeded = TRUE;
   }

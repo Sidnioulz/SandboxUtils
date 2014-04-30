@@ -80,6 +80,33 @@ sfcd_dbus_wrapper_sfcd_get_local_only (SandboxUtilsClient *cli,
                                        GVariant           *parameters,
                                        gboolean           *local_only,
                                        GError            **error);
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_select_multiple (SandboxUtilsClient *cli,
+                                            GVariant           *parameters,
+                                            GError            **error);
+
+gboolean
+sfcd_dbus_wrapper_sfcd_get_select_multiple (SandboxUtilsClient *cli,
+                                            GVariant           *parameters,
+                                            gboolean           *select_multiple,
+                                            GError            **error);
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_show_hidden (SandboxUtilsClient *cli,
+                                        GVariant           *parameters,
+                                        GError            **error);
+
+gboolean
+sfcd_dbus_wrapper_sfcd_get_show_hidden (SandboxUtilsClient *cli,
+                                        GVariant           *parameters,
+                                        gboolean           *show_hidden,
+                                        GError            **error);
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_current_name (SandboxUtilsClient *cli,
+                                         GVariant           *parameters,
+                                         GError            **error);
 //TODO rest of API
 
 

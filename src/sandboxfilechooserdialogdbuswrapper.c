@@ -343,9 +343,177 @@ sfcd_dbus_wrapper_sfcd_get_action (SandboxUtilsClient *cli,
   return succeeded;
 }
 
+gboolean
+sfcd_dbus_wrapper_sfcd_set_local_only (SandboxUtilsClient *cli,
+                                       GVariant           *parameters,
+                                       GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gboolean              local_only;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&sb)", &dialog_id, &local_only);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_local_only (sfcd, local_only, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_get_local_only (SandboxUtilsClient *cli,
+                                       GVariant           *parameters,
+                                       gboolean           *local_only,
+                                       GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+  g_return_val_if_fail (local_only != NULL, FALSE);
+
+  g_variant_get (parameters, "(&s)", &dialog_id);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded = sfcd_get_local_only (sfcd, local_only, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_select_multiple (SandboxUtilsClient *cli,
+                                            GVariant           *parameters,
+                                            GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gboolean              select_multiple;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&sb)", &dialog_id, &select_multiple);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_select_multiple (sfcd, select_multiple, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_get_select_multiple (SandboxUtilsClient *cli,
+                                            GVariant           *parameters,
+                                            gboolean           *select_multiple,
+                                            GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+  g_return_val_if_fail (select_multiple != NULL, FALSE);
+
+  g_variant_get (parameters, "(&s)", &dialog_id);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded = sfcd_get_select_multiple (sfcd, select_multiple, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_show_hidden (SandboxUtilsClient *cli,
+                                        GVariant           *parameters,
+                                        GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gboolean              show_hidden;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&sb)", &dialog_id, &show_hidden);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_show_hidden (sfcd, show_hidden, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
 
 
+gboolean
+sfcd_dbus_wrapper_sfcd_get_show_hidden (SandboxUtilsClient *cli,
+                                        GVariant           *parameters,
+                                        gboolean           *show_hidden,
+                                        GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
 
+  g_return_val_if_fail (cli != NULL, FALSE);
+  g_return_val_if_fail (show_hidden != NULL, FALSE);
+
+  g_variant_get (parameters, "(&s)", &dialog_id);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded = sfcd_get_show_hidden (sfcd, show_hidden, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
+
+gboolean
+sfcd_dbus_wrapper_sfcd_set_current_name (SandboxUtilsClient *cli,
+                                       GVariant           *parameters,
+                                       GError            **error)
+{
+  const gchar                *dialog_id  = NULL;
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  gboolean                    succeeded  = FALSE;
+  const gchar                *name       = NULL;
+
+  g_return_val_if_fail (cli != NULL, FALSE);
+
+  g_variant_get (parameters, "(&ss)", &dialog_id, &name);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id, error)) != NULL)
+  {
+    succeeded =  sfcd_set_current_name (sfcd, name, error);
+
+    _sfcd_dbus_wrapper_lookup_finished (sfcd);
+  }
+
+  return succeeded;
+}
 
 
 
@@ -431,69 +599,50 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
     if (sfcd_dbus_wrapper_sfcd_get_action (cli, parameters, &action, &err))
       g_dbus_method_invocation_return_value (invocation, g_variant_new ("(i)", action));
   }
-  /*
   else if (g_strcmp0 (method_name, "SetLocalOnly") == 0)
   { 
-    good = sfcd_dbus_wrapper_sfcd_set_local_only (parameters, &err);
-
-    if (good)
+    if (sfcd_dbus_wrapper_sfcd_set_local_only (cli, parameters, &err))
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "GetLocalOnly") == 0)
   {
-    gboolean local_only;
+    gboolean local_only = FALSE;
 
-    good = sfcd_dbus_wrapper_sfcd_get_local_only (parameters, 
-                                                             &local_only,
-                                                             &err);
-    if (good)
-      g_dbus_method_invocation_return_value (invocation, 
-                                             g_variant_new ("(b)", local_only));
+    if (sfcd_dbus_wrapper_sfcd_get_local_only (cli, parameters, &local_only, &err))
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(b)", local_only));
   }
   else if (g_strcmp0 (method_name, "SetSelectMultiple") == 0)
   { 
-    good = sfcd_dbus_wrapper_sfcd_set_select_multiple (parameters, &err);
-
-    if (good)
+    if (sfcd_dbus_wrapper_sfcd_set_select_multiple (cli, parameters, &err))
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "GetSelectMultiple") == 0)
   {
-    gboolean select_multiple;
+    gboolean select_multiple = FALSE;
 
-    good = sfcd_dbus_wrapper_sfcd_get_select_multiple (parameters, 
-                                                                  &select_multiple,
-                                                                  &err);
-    if (good)
-      g_dbus_method_invocation_return_value (invocation, 
-                                             g_variant_new ("(b)", select_multiple));
+    if (sfcd_dbus_wrapper_sfcd_get_select_multiple (cli, parameters, &select_multiple, &err))
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(b)", select_multiple));
   }
   else if (g_strcmp0 (method_name, "SetShowHidden") == 0)
   { 
-    good = sfcd_dbus_wrapper_sfcd_set_show_hidden (parameters, &err);
-
-    if (good)
+    if (sfcd_dbus_wrapper_sfcd_set_show_hidden (cli, parameters, &err))
       g_dbus_method_invocation_return_value (invocation, NULL);
   }
   else if (g_strcmp0 (method_name, "GetShowHidden") == 0)
   {
-    gboolean show_hidden;
+    gboolean show_hidden = FALSE;
 
-    good = sfcd_dbus_wrapper_sfcd_get_show_hidden (parameters, 
-                                                                  &show_hidden,
-                                                                  &err);
-    if (good)
-      g_dbus_method_invocation_return_value (invocation, 
-                                             g_variant_new ("(b)", show_hidden));
+    if (sfcd_dbus_wrapper_sfcd_get_show_hidden (cli, parameters, &show_hidden, &err))
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(b)", show_hidden));
   }
-
-  
-  */
+  else if (g_strcmp0 (method_name, "SetCurrentName") == 0)
+  { 
+    if (sfcd_dbus_wrapper_sfcd_set_current_name (cli, parameters, &err))
+      g_dbus_method_invocation_return_value (invocation, NULL);
+  }
 
   // Handle errors here -- will need attention later on (factorised for now)
   // TODO: distinguish security policy errors from GTK errors
-  // FIXME: never ever put client-controlled strings into error without
-  // neutralising the format (doesnt occur on GDBus-obtained strings though)
   if (err)
   {
       g_dbus_method_invocation_return_error (invocation,
@@ -503,7 +652,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
                                              err->message);
       g_error_free (err);
   }
-  else
+  else if (0) // TODO if nothing returned yet, not sure how to do that with g_dbus
   {
 		syslog (LOG_CRIT,
 		        "SfcdDbusWrapper.Dbus.CallHandler: method '%s' was not handled properly but no error message is available (this should never happen, please report a bug).\n",
@@ -513,7 +662,7 @@ sfcd_dbus_wrapper_dbus_call_handler (GDBusConnection       *connection,
 
 
 
-
+//TODO GDBus codegen, it's about time...
 static const gchar sfcd_introspection_xml[] =
   "<node name='"SANDBOXUTILS_PATH"'>"
 	  "<interface name='"SFCD_IFACE"'>"
@@ -578,6 +727,10 @@ static const gchar sfcd_introspection_xml[] =
 		  "<method name='GetShowHidden'>"
 			  "<arg type='s' name='dialog_id' direction='in' />"
 			  "<arg type='b' name='show_hidden' direction='out' />"
+		  "</method>"
+		  "<method name='SetCurrentName'>"
+			  "<arg type='s' name='dialog_id' direction='in' />"
+			  "<arg type='s' name='name' direction='in' />"
 		  "</method>"
 	  "</interface>"
   "</node>";
