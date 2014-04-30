@@ -25,3 +25,10 @@ gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --ob
 gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Destroy <dialog id>
 gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id>
 
+### Another example with a white rabbit and configuring a dialog
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.New "Terrible Choices" "Morpheus" 3 "{'Blue Pill': <3>, 'Red Pill': <0>}"
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetCurrentFolder <dialog id> /home/steve/Pictures
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetCurrentName <dialog id> WhiteRabbit.jpg
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id> 
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetCurrentName <dialog id> Agents.jpg
+
