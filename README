@@ -1,7 +1,27 @@
 SandboxUtils
 ============
 
-Utilities for accessing resources from within a Linux userland sandbox, through DBus
+Utilities for accessing resources from within a Linux userland sandbox, through DBus.
 
-gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.New "Terrible Choices" "FrogMaster" 2 "{'Blue Pill': <3>, 'Red Pill': <0>}"
+SandboxFileChooserDialog: server-side of a file chooser dialog API for sandboxed apps. See the following examples.
+
+### Create a dialog, verify its default action, run it and close it
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.New "Terrible Choices" "Morpheus" 2 "{'Blue Pill': <3>, 'Red Pill': <0>}"
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.GetAction <dialog id>
 gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id>
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.CancelRun <dialog id>
+
+### Make it a Save File dialog, run it and close it
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetAction <dialog id> 3
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id>
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.CancelRun <dialog id>
+
+### Now set a current name, run it and observe the difference. Try to change again and witness statefulness
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetCurrentName <dialog id> potatoes
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id>
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetCurrentName <dialog id> carrots
+
+### Get upset and destroy your dialog. Regret it and observe the dialog is gone.
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Destroy <dialog id>
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id>
+
