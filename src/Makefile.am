@@ -27,8 +27,9 @@ GDBUS_GENERATED = \
 
 $(GDBUS_GENERATED) : sandboxfilechooserdialoginterface.xml Makefile
 		$(PYTHON) gdbus-codegen \
-		--interface-prefix org.mupuf.SandboxUtils. \
+		--interface-prefix org.mupuf.SandboxUtils.SandboxFileChooserDialog \
 		--c-generate-object-manager \
+		--c-namespace SfcdDbusWrapper \
 		--generate-c-code sandboxfilechooserdialogdbusobject \
 		--generate-docbook sfcd-interface \
 		$< \
