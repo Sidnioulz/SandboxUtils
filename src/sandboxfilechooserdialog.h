@@ -74,8 +74,13 @@ gchar *SfcdStatePrintable[5] = {"Wrong State (an error occurred)",
  *  when not allowed by its current state. See #SfcdState.
  * @SFCD_ERROR_FORBIDDEN_QUERY: Occurs when one attempts to obtain information
  *  from a dialog when not allowed by its current state. See #SfcdState.
- * @SFCD_ERROR_FORBIDDEN_QUERY: 
- * @SFCD_ERROR_UNKNOWN:
+ * @SFCD_ERROR_TOOLKIT_CALL_FAILED: Occurs if the #SandboxFileChooserDialog code
+ *  functionned properly but the toolkit itself returned an error when calling a
+ *  method of the underlying #GtkFileChooserDialog.
+ *  from a dialog when not allowed by its current state. See #SfcdState.
+ * @SFCD_ERROR_UNKNOWN: Occurs if the cause of an error cannot be determined.
+    Usually you get this error when a sanity check failed, probably indicating a
+    bug in #SandboxUtils.
  *
  * Describes an error related to the manipulation of a
  * #SandboxFileChooserDialog instance.
@@ -85,6 +90,7 @@ typedef enum {
   SFCD_ERROR_LOOKUP,
   SFCD_ERROR_FORBIDDEN_CHANGE,
   SFCD_ERROR_FORBIDDEN_QUERY,
+  SFCD_ERROR_TOOLKIT_CALL_FAILED,
   SFCD_ERROR_UNKNOWN
 } SfcdErrorCode;
 
@@ -244,6 +250,87 @@ sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
                              const gchar               *uri,
                              GError                   **error);
 
+gboolean
+sfcd_add_shortcut_folder (SandboxFileChooserDialog  *self,
+                          const gchar               *folder,
+                          GError                   **error);
+
+gboolean
+sfcd_remove_shortcut_folder (SandboxFileChooserDialog  *self,
+                             const gchar               *folder,
+                             GError                   **error);
+
+//A list of folder filenames, or NULL if there are no shortcut folders. Free the returned list with g_slist_free(), and the filenames with g_free(). Legitimate NULL.
+gboolean
+sfcd_list_shortcut_folders (SandboxFileChooserDialog   *self,
+                            GSList                    **list,
+                            GError                    **error);
+
+gboolean
+sfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *self,
+                              const gchar               *uri,
+                              GError                   **error);
+
+gboolean
+sfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog  *self,
+                                 const gchar               *uri,
+                                 GError                   **error);
+
+//A list of folder filenames, or NULL if there are no shortcut folders. Free the returned list with g_slist_free(), and the filenames with g_free(). Legitimate NULL.
+gboolean
+sfcd_list_shortcut_folder_uris (SandboxFileChooserDialog   *self,
+                                GSList                    **list,
+                                GError                    **error);
+
+
+/* DATA RERIEVAL METHODS */
+//Free this with g_free(). 
+gboolean
+sfcd_get_current_name (SandboxFileChooserDialog   *self,
+                       gchar                     **name,
+                       GError                    **error);
+
+//Free this with g_free(). Legitimate "", not NULL.
+gboolean
+sfcd_get_current_name (SandboxFileChooserDialog   *self,
+                       gchar                     **name,
+                       GError                    **error);
+
+//Free this with g_free(). Legitimate NULL.
+gboolean
+sfcd_get_filename (SandboxFileChooserDialog   *self,
+                   gchar                     **name,
+                   GError                    **error);
+
+//A list of folder filenames, or NULL if there are no shortcut folders. Free the returned list with g_slist_free(), and the filenames with g_free(). Legitimate NULL.
+gboolean
+sfcd_get_filenames (SandboxFileChooserDialog   *self,
+                    GSList                    **list,
+                    GError                    **error);
+
+//Free this with g_free(). Legitimate "", not NULL.
+gboolean
+sfcd_get_current_folder (SandboxFileChooserDialog   *self,
+                         gchar                     **folder,
+                         GError                    **error);
+
+//Free this with g_free(). Legitimate NULL.
+gboolean
+sfcd_get_uri (SandboxFileChooserDialog   *self,
+              gchar                     **uri,
+              GError                    **error);
+
+//A list of folder filenames, or NULL if there are no shortcut folders. Free the returned list with g_slist_free(), and the filenames with g_free(). Legitimate NULL.
+gboolean
+sfcd_get_uris (SandboxFileChooserDialog   *self,
+               GSList                    **list,
+               GError                    **error);
+
+//Free this with g_free(). Legitimate "", not NULL.
+gboolean
+sfcd_get_current_folder_uri (SandboxFileChooserDialog   *self,
+                             gchar                     **uri,
+                             GError                    **error);
 
 
 
@@ -306,46 +393,32 @@ sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
  *   gboolean	gtk_file_chooser_select_file ()
  *   void	gtk_file_chooser_unselect_file ()
  * _____________________________________________________________________________
- * 
+ * API CHANGE: make GtkFileFilter DBus-transportable, somehow
+ *
+ *   void	gtk_file_chooser_add_filter ()
+ *   void	gtk_file_chooser_remove_filter ()
+ *   GSList *	gtk_file_chooser_list_filters ()
+ *   void	gtk_file_chooser_set_filter ()
+ *   GtkFileFilter *	gtk_file_chooser_get_filter ()
+ * _____________________________________________________________________________
+ * API CHANGE: make GFile DBus-transportable, somehow -- or dump this
+ *
+ *   gboolean	gtk_file_chooser_set_current_folder_file ()
+ *   gboolean	gtk_file_chooser_set_file ()
+ *   GFile *	gtk_file_chooser_get_current_folder_file ()
+ *   GFile *	gtk_file_chooser_get_file ()
+ *   GSList *	gtk_file_chooser_get_files ()
+ * _____________________________________________________________________________
  */
 
-/*
 
-// Configuration
-void	gtk_file_chooser_add_filter ()
-void	gtk_file_chooser_remove_filter ()
-GSList *	gtk_file_chooser_list_filters ()
-void	gtk_file_chooser_set_filter ()
-GtkFileFilter *	gtk_file_chooser_get_filter ()
-gboolean	gtk_file_chooser_add_shortcut_folder ()
-gboolean	gtk_file_chooser_remove_shortcut_folder ()
-GSList *	gtk_file_chooser_list_shortcut_folders ()
-gboolean	gtk_file_chooser_add_shortcut_folder_uri ()
-gboolean	gtk_file_chooser_remove_shortcut_folder_uri ()
-GSList *	gtk_file_chooser_list_shortcut_folder_uris ()
-gboolean	gtk_file_chooser_set_current_folder_file ()
-gboolean	gtk_file_chooser_set_file ()
-
-// Retrieval
-gchar *	gtk_file_chooser_get_current_name ()
-gchar *	gtk_file_chooser_get_filename ()
-GSList *	gtk_file_chooser_get_filenames ()
-gchar *	gtk_file_chooser_get_current_folder ()
-gchar *	gtk_file_chooser_get_uri ()
-GSList *	gtk_file_chooser_get_uris ()
-gchar *	gtk_file_chooser_get_current_folder_uri ()
-GFile *	gtk_file_chooser_get_current_folder_file ()
-GFile *	gtk_file_chooser_get_file ()
-GSList *	gtk_file_chooser_get_files ()
-
-*/
-
-
-
+// TODO: propose a stricter API where state switches need to be made via a Reset
+//       method
+//
 // TODO: having the dialog modal locally should cause the compositor
 //       to handle it as a modal child of the client
-
-//TODO check which signals are allowed
+//
+// TODO check which signals are allowed
 //GtkFileChooserConfirmation	confirm-overwrite	Run Last    // TODO implement
 //void	current-folder-changed	Run Last                    // Not exported, forbidden info
 //void	file-activated	Run Last                            // Not exported, "run-finished" instead

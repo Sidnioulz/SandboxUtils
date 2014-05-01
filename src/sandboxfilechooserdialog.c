@@ -29,6 +29,15 @@
  * #SandboxFileChooserDialog is an API for a file chooser dialog, based on the
  * #GtkFileChooserDialog class and #GtkFileChooser interface. This dialog can be
  * used to provide an interface to open files or directories, or to save files.
+ * 
+ * #SandboxFileChooserDialog is designed to be wrapped and exposed over an IPC
+ * mechanism. The process handling the class on behalf of the sandboxed app is
+ * in charge of managing access control to make sure the app can read and write
+ * files that were selected in the dialog. This is best done from within the IPC
+ * wrapper rather than by modifying this class.
+ *
+ * This class is thread-safe so long as you make sure to return from all of an
+ * instance's methods before destroying it.
  *
  * It differs with other dialogs in that it has a #SfcdState among:
  * 
@@ -46,16 +55,14 @@
  * button. If the dialog is modified or reused, it switches back to a previous 
  * state in a rather conservative way, both to provide consistency on the
  * restrictions it imposes and to allow some level of object reuse.
- * 
- * #SandboxFileChooserDialog is designed to be wrapped and exposed over an IPC
- * mechanism. The process handling the class on behalf of the sandboxed app is
- * in charge of managing access control to make sure the app can read and write
- * files that were selected in the dialog. This is best done from within the IPC
- * wrapper rather than by modifying this class.
  *
- * This class is thread-safe so long as you make sure to return from all of an
- * instance's methods before destroying it.
+ * The #SFCD_CONFIGURATION state... getters -> only in conf/retriev, fail in run
+ * setters -> only in conf, will switch retriev back to conf TODO
+ *
+ * The #SFCD_RUNNING state TODO
  * 
+ * The #SFCD_DATA_RETRIEVAL state TODO
+ *
  * Since: 0.3
  */
 
@@ -257,6 +264,23 @@ sfcd_is_running (SandboxFileChooserDialog *self)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* RUNNING METHODS */
 /* Struct to transfer data to the running function and its handlers */
 typedef struct _SfcdRunFuncData{
@@ -451,7 +475,7 @@ sfcd_run (SandboxFileChooserDialog *self,
                  self->id,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-    syslog (LOG_WARNING, "%s", (*error)->message);
+    syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -534,7 +558,7 @@ sfcd_present (SandboxFileChooserDialog  *self,
                 self->id,
                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-    syslog (LOG_WARNING, "%s", (*error)->message);
+    syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -572,7 +596,7 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
                 self->id,
                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-    syslog (LOG_WARNING, "%s", (*error)->message);
+    syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -590,6 +614,47 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
 
   return succeeded;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 gboolean
 sfcd_set_action (SandboxFileChooserDialog  *self,
@@ -613,7 +678,7 @@ sfcd_set_action (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  action);
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -664,7 +729,7 @@ sfcd_get_action (SandboxFileChooserDialog *self,
                  self->id,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -706,7 +771,7 @@ sfcd_set_local_only (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  _B (local_only));
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -757,7 +822,7 @@ sfcd_get_local_only (SandboxFileChooserDialog *self,
                  self->id,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -799,7 +864,7 @@ sfcd_set_select_multiple (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  _B (select_multiple));
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -850,7 +915,7 @@ sfcd_get_select_multiple (SandboxFileChooserDialog *self,
                  self->id,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -892,7 +957,7 @@ sfcd_set_show_hidden (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  _B (show_hidden));
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -943,7 +1008,7 @@ sfcd_get_show_hidden (SandboxFileChooserDialog *self,
                  self->id,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -984,7 +1049,7 @@ sfcd_set_current_name (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  name);
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -1000,7 +1065,7 @@ sfcd_set_current_name (SandboxFileChooserDialog  *self,
     gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (self->priv->dialog), name);
 
     syslog (LOG_DEBUG,
-            "SandboxFileChooserDialog.SetCurrentName: dialog '%s' ('%s')'s currently typed name is now '%s'.\n",
+            "SandboxFileChooserDialog.SetCurrentName: dialog '%s' ('%s')'s typed name is now '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             name);
@@ -1035,7 +1100,7 @@ sfcd_set_filename (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  filename);
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -1086,7 +1151,7 @@ sfcd_set_current_folder (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  filename);
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -1137,7 +1202,7 @@ sfcd_set_uri (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  uri);
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -1188,7 +1253,7 @@ sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
                  gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
                  uri);
 
-      syslog (LOG_WARNING, "%s", (*error)->message);
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
   }
   else
   {
@@ -1208,6 +1273,639 @@ sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             uri);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_add_shortcut_folder (SandboxFileChooserDialog  *self,
+                          const gchar               *folder,
+                          GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.AddShortcutFolder: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 folder);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.AddShortcutFolder: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    succeeded = gtk_file_chooser_add_shortcut_folder (GTK_FILE_CHOOSER (self->priv->dialog), folder, error);
+
+    if (succeeded)
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.AddShortcutFolder: dialog '%s' ('%s') has been added a shortcut folder named '%s'.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+              folder);
+    else
+    {
+      g_prefix_error (error,
+                      "SandboxFileChooserDialog.AddShortcutFolder: dialog '%s' ('%s') did not allow adding a shortcut folder named '%s').\n",
+                      self->id,
+                      gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                      folder);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+    }
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_remove_shortcut_folder (SandboxFileChooserDialog  *self,
+                             const gchar               *folder,
+                             GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.RemoveShortcutFolder: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 folder);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.RemoveShortcutFolder: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    succeeded = gtk_file_chooser_remove_shortcut_folder (GTK_FILE_CHOOSER (self->priv->dialog), folder, error);
+
+    if (succeeded)
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.RemoveShortcutFolder: dialog '%s' ('%s')'s shortcut folder named '%s' has been removed.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+              folder);
+    else
+    {
+      g_prefix_error (error,
+                      "SandboxFileChooserDialog.RemoveShortcutFolder: dialog '%s' ('%s') did not allow removing a shortcut folder named '%s').\n",
+                      self->id,
+                      gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                      folder);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+    }
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_list_shortcut_folders (SandboxFileChooserDialog   *self,
+                            GSList                    **list,
+                            GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.ListShortcutFolders: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *list = gtk_file_chooser_list_shortcut_folders (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.ListShortcutFolders: dialog '%s' ('%s')'s list of shortcuts contains %u elements.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            (*list == NULL? 0:g_slist_length (*list)));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *self,
+                              const gchar               *uri,
+                              GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.AddShortcutFolderUri: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 uri);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.AddShortcutFolderUri: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    succeeded = gtk_file_chooser_add_shortcut_folder_uri (GTK_FILE_CHOOSER (self->priv->dialog), uri, error);
+
+    if (succeeded)
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.AddShortcutFolderUri: dialog '%s' ('%s') has been added a shortcut folder named '%s'.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+              uri);
+    else
+    {
+      g_prefix_error (error,
+                      "SandboxFileChooserDialog.AddShortcutFolderUri: dialog '%s' ('%s') did not allow adding a shortcut folder named '%s').\n",
+                      self->id,
+                      gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                      uri);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+    }
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog  *self,
+                                 const gchar               *uri,
+                                 GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.RemoveShortcutFolderUri: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 uri);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.RemoveShortcutFolderUri: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    succeeded = gtk_file_chooser_remove_shortcut_folder_uri (GTK_FILE_CHOOSER (self->priv->dialog), uri, error);
+
+    if (succeeded)
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.RemoveShortcutFolderUri: dialog '%s' ('%s')'s shortcut folder named '%s' has been removed.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+              uri);
+    else
+    {
+      g_prefix_error (error,
+                      "SandboxFileChooserDialog.RemoveShortcutFolderUri: dialog '%s' ('%s') did not allow removing a shortcut folder named '%s').\n",
+                      self->id,
+                      gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                      uri);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+    }
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_list_shortcut_folder_uris (SandboxFileChooserDialog   *self,
+                                GSList                    **list,
+                                GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.ListShortcutFoldersUri: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *list = gtk_file_chooser_list_shortcut_folder_uris (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.ListShortcutFoldersUri: dialog '%s' ('%s')'s list of shortcuts contains %u elements.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            (*list == NULL? 0:g_slist_length (*list)));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+gboolean
+sfcd_get_current_name (SandboxFileChooserDialog   *self,
+                       gchar                     **name,
+                       GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_get_state (self) != SFCD_DATA_RETRIEVAL)
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.GetCurrentName: dialog '%s' ('%s') is being configured or running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *name = gtk_file_chooser_get_current_name (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetCurrentName: dialog '%s' ('%s')'s typed name currently is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            *name);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_filename (SandboxFileChooserDialog   *self,
+                   gchar                     **name,
+                   GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_get_state (self) != SFCD_DATA_RETRIEVAL)
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.GetFilename: dialog '%s' ('%s') is being configured or running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *name = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetFilename: dialog '%s' ('%s')'s current file name is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            *name);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_filenames (SandboxFileChooserDialog   *self,
+                    GSList                    **list,
+                    GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_get_state (self) != SFCD_DATA_RETRIEVAL)
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.GetFilenames: dialog '%s' ('%s') is being configured or running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *list = gtk_file_chooser_get_filenames (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetFilenames: dialog '%s' ('%s')'s list of current file names contains %u elements.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            (*list == NULL? 0:g_slist_length (*list)));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_get_current_folder (SandboxFileChooserDialog   *self,
+                             gchar                     **folder,
+                             GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.GetCurrentFolder: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *folder = gtk_file_chooser_get_current_folder (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetCurrentFolder: dialog '%s' ('%s')'s current folder is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            *folder);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_uri (SandboxFileChooserDialog   *self,
+              gchar                     **uri,
+              GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_get_state (self) != SFCD_DATA_RETRIEVAL)
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.GetUri: dialog '%s' ('%s') is being configured or running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *uri = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetUri: dialog '%s' ('%s')'s current file uri is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            *uri);
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_uris (SandboxFileChooserDialog   *self,
+               GSList                    **list,
+               GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_get_state (self) != SFCD_DATA_RETRIEVAL)
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.GetUris: dialog '%s' ('%s') is being configured or running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *list = gtk_file_chooser_get_uris (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetUris: dialog '%s' ('%s')'s list of current file uris contains %u elements.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            (*list == NULL? 0:g_slist_length (*list)));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_get_current_folder_uri (SandboxFileChooserDialog   *self,
+                                 gchar                     **uri,
+                                 GError                    **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.GetCurrentFolderUri: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *uri = gtk_file_chooser_get_current_folder_uri (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetCurrentFolderUri: dialog '%s' ('%s')'s current folder uri is '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            *uri);
 
     succeeded = TRUE;
   }
