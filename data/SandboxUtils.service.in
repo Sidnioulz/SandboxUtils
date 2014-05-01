@@ -1,15 +1,15 @@
 [Unit]
-Description=Secure File Access Daemon
+Description=Sandbox Utilities for access to user data
 After=syslog.target
 Requires=dbus.service
 
 [Service]
 Type=dbus
-BusName=org.mupuf.SecureFileAccess
-ExecStart=@bindir@/sfad
+BusName=org.mupuf.SandboxUtils
+ExecStart=@bindir@/sandboxutilsd
 KillMode=process
 Restart=always
-WatchdogSec=10
+WatchdogSec=5
 Environment=DISPLAY=:0
 
 
