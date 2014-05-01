@@ -850,8 +850,8 @@ sfcd_get_local_only (SandboxFileChooserDialog *self,
 
 gboolean
 sfcd_set_select_multiple (SandboxFileChooserDialog  *self,
-                     gboolean                   select_multiple,
-                     GError                   **error)
+                          gboolean                   select_multiple,
+                          GError                   **error)
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
   g_return_val_if_fail (error != NULL, FALSE);
@@ -1757,9 +1757,9 @@ sfcd_get_filenames (SandboxFileChooserDialog   *self,
 }
 
 gboolean
-sfcd_get_get_current_folder (SandboxFileChooserDialog   *self,
-                             gchar                     **folder,
-                             GError                    **error)
+sfcd_get_current_folder (SandboxFileChooserDialog   *self,
+                         gchar                     **folder,
+                         GError                    **error)
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
   g_return_val_if_fail (error != NULL, FALSE);
@@ -1880,9 +1880,9 @@ sfcd_get_uris (SandboxFileChooserDialog   *self,
 }
 
 gboolean
-sfcd_get_get_current_folder_uri (SandboxFileChooserDialog   *self,
-                                 gchar                     **uri,
-                                 GError                    **error)
+sfcd_get_current_folder_uri (SandboxFileChooserDialog   *self,
+                             gchar                     **uri,
+                             GError                    **error)
 {
   g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
   g_return_val_if_fail (error != NULL, FALSE);
