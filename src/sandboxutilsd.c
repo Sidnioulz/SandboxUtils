@@ -81,7 +81,7 @@ main (int argc, char *argv[])
 	
   // Notify systemd of readiness and start the loop
   loop = g_main_loop_new (NULL, FALSE);
-  g_timeout_add_seconds (10, watchdog_func, NULL);
+  g_timeout_add_seconds (3, watchdog_func, NULL);
   sd_notify(0, "READY=1");
   g_main_loop_run (loop);
 
