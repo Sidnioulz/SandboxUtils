@@ -74,7 +74,7 @@
 		 </method>
 		 <method name='SetCurrentFolder'>
 			 <arg type='s' name='dialog_id' direction='in' />
-			 <arg type='s' name='filename' direction='in' />
+			 <arg type='s' name='current_folder' direction='in' />
 		 </method>
 		 <method name='SetUri'>
 			 <arg type='s' name='dialog_id' direction='in' />
@@ -83,6 +83,58 @@
 		 <method name='SetCurrentFolderUri'>
 			 <arg type='s' name='dialog_id' direction='in' />
 			 <arg type='s' name='uri' direction='in' />
+		 </method>
+		 <method name='AddShortcutFolder'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='folder' direction='in' />
+		 </method>
+		 <method name='RemoveShortcutFolder'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='folder' direction='in' />
+		 </method>
+		 <method name='ListShortcutFolders'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='as' name='list' direction='out' />
+		 </method>
+		 <method name='AddShortcutFolderUri'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='uri' direction='in' />
+		 </method>
+		 <method name='RemoveShortcutFolderUri'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='uri' direction='in' />
+		 </method>
+		 <method name='ListShortcutFolderUris'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='as' name='list' direction='out' />
+		 </method>
+		 <method name='GetCurrentName'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='name' direction='out' />
+		 </method>
+		 <method name='GetFilename'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='filename' direction='out' />
+		 </method>
+		 <method name='GetFilenames'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='as' name='list' direction='out' />
+		 </method>
+		 <method name='GetCurrentFolder'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='current_folder' direction='out' />
+		 </method>
+		 <method name='GetUri'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='uri' direction='out' />
+		 </method>
+		 <method name='GetUris'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='as' name='list' direction='out' />
+		 </method>
+		 <method name='GetCurrentFolderUri'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='uri' direction='out' />
 		 </method>
 	 </interface>
  </node>

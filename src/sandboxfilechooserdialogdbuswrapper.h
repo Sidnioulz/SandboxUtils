@@ -16,109 +16,16 @@
 #include "sandboxutilscommon.h"
 #include "sandboxutilsclientmanager.h"
 #include "sandboxfilechooserdialog.h"
+#include "sandboxfilechooserdialogdbusobject.h"
 
 
 typedef struct {
-  guint           owner_id;
-  guint           registration_id;
-  GDBusNodeInfo  *introspection_data;
+  guint             owner_id;
+  SfcdDbusWrapper  *interface;
 } SfcdDbusWrapperInfo;
 
 
-/*** SandboxFileChooserDialog part of wrapper ***/
-
-gboolean
-sfcd_dbus_wrapper_sfcd_new (SandboxUtilsClient *cli,
-                            GVariant           *parameters,
-                            gchar             **dialog_id,
-                            GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_destroy (SandboxUtilsClient *cli,
-                                GVariant           *parameters,
-                                GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_get_state (SandboxUtilsClient *cli,
-                                  GVariant           *parameters,
-                                  gint32             *state,
-                                  GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_run (SandboxUtilsClient *cli,
-                            GVariant           *parameters,
-                            GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_present (SandboxUtilsClient *cli,
-                                GVariant           *parameters,
-                                GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_cancel_run (SandboxUtilsClient *cli,
-                                   GVariant           *parameters,
-                                   GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_set_action (SandboxUtilsClient *cli,
-                                   GVariant           *parameters,
-                                   GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_get_action (SandboxUtilsClient *cli,
-                                   GVariant           *parameters,
-                                   gint32             *action,
-                                   GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_set_local_only (SandboxUtilsClient *cli,
-                                       GVariant           *parameters,
-                                       GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_get_local_only (SandboxUtilsClient *cli,
-                                       GVariant           *parameters,
-                                       gboolean           *local_only,
-                                       GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_set_select_multiple (SandboxUtilsClient *cli,
-                                            GVariant           *parameters,
-                                            GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_get_select_multiple (SandboxUtilsClient *cli,
-                                            GVariant           *parameters,
-                                            gboolean           *select_multiple,
-                                            GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_set_show_hidden (SandboxUtilsClient *cli,
-                                        GVariant           *parameters,
-                                        GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_get_show_hidden (SandboxUtilsClient *cli,
-                                        GVariant           *parameters,
-                                        gboolean           *show_hidden,
-                                        GError            **error);
-
-gboolean
-sfcd_dbus_wrapper_sfcd_set_current_name (SandboxUtilsClient *cli,
-                                         GVariant           *parameters,
-                                         GError            **error);
-//TODO rest of API
-
-
-
-
-
-
-
-
-
-
-/*** DBus part of wrapper ***/
+//TODO move to sandboxutilsdbus.h
 
 SfcdDbusWrapperInfo *
 sfcd_dbus_wrapper_dbus_init ();
