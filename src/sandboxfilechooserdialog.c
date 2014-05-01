@@ -138,6 +138,9 @@ sfcd_dispose (GObject* object)
     gtk_widget_destroy (self->priv->dialog);
   }
 
+  syslog (LOG_DEBUG, "SandboxFileChooserDialog.Dispose: dialog '%s' was disposed.\n",
+              self->id);
+
   g_free (self->id);
 
   G_OBJECT_CLASS (sfcd_parent_class)->dispose (object);
