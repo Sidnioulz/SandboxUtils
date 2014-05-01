@@ -11,7 +11,7 @@
 #define __SANDBOX_UTILS_COMMON_H__
 
 #define NAME "sandboxutilsd"
-#define VERSION "0.3"
+#define VERSION "0.4"
 
 #define SANDBOXUTILS_IFACE "org.mupuf.SandboxUtils"
 #define SANDBOXUTILS_PATH "/org/mupuf/SandboxUtils"

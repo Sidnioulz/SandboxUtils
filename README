@@ -32,3 +32,20 @@ gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --ob
 gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id> 
 gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetCurrentName <dialog id> Agents.jpg
 
+### Notice how setting multiple files only works when opening files
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.New "Terrible Choices" "Morpheus" 3 "{'Blue Pill': <3>, 'Red Pill': <0>}"
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetSelectMultiple <dialog id> true
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.GetSelectMultiple <dialog id> 
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetAction <dialog id> 0
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetSelectMultiple <dialog id> true
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.GetSelectMultiple <dialog id> 
+
+### Select multiple files, run the dialog, get the filenames and notice current name isn't set
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.New "Terrible Choices" "Morpheus" 0 "{'Blue Pill': <3>, 'Red Pill': <0>}"
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.SetSelectMultiple <dialog id> true
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.Run <dialog id>
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.GetUri <dialog id>
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.GetFilename <dialog id>
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.GetCurrentName <dialog id>
+gdbus call --session --dest org.mupuf.SandboxUtils.SandboxFileChooserDialog --object-path /org/mupuf/SandboxUtils --method org.mupuf.SandboxUtils.SandboxFileChooserDialog.GetFilenames <dialog id>
+

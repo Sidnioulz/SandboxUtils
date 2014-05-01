@@ -1,12 +1,23 @@
 2014-05-01  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
+    * sandboxutilscommon.h: Bumped version number for 0.4
+
+    * Makefile.am, configure.ac: --enable-debug switch now works.
+
+    * sandboxfilechooserdialogdbuswrapper{.c,.h}: Now using the GDBus-codegen
+    generated GObject and InterfaceSkeleton inside the wrapper. Also implemented
+    the other functions that were already in the SFCD class.
+    
+    * sandboxfilechooserdialoginterface.xml: Exported the DBus interface of SFCD
+    to a XML file.
+
     * sandboxutilsd.c: Shorter timeout for watchdog.
 
     * data/*: Removed old DBus service file since we'll use a systemd one.
 
-    * Makefile.am, sandboxfilechooserdialoginterface.xml: Setup the basic
-    building blocks for GDBus codegen, in order to maybe replace the complicated
-    wrapper and also to provide a DBus interface to clients.
+    * Makefile.am, sandboxfilechooserdialoginterface.xml: Setup the building
+    blocks for GDBus codegen, in order to replace the complicated wrapper and
+    also to provide a DBus interface to clients.
 
 2014-04-30  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
