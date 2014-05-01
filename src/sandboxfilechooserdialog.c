@@ -1030,6 +1030,7 @@ sfcd_get_show_hidden (SandboxFileChooserDialog *self,
 
   return succeeded;
 }
+
 gboolean
 sfcd_set_current_name (SandboxFileChooserDialog  *self,
                        const gchar               *name,
