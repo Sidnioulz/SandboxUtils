@@ -1,3 +1,32 @@
+2014-05-01  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * sandboxutilsd.c: Shorter timeout for watchdog.
+
+    * data/*: Removed old DBus service file since we'll use a systemd one.
+
+    * Makefile.am, sandboxfilechooserdialoginterface.xml: Setup the basic
+    building blocks for GDBus codegen, in order to maybe replace the complicated
+    wrapper and also to provide a DBus interface to clients.
+
+2014-04-30  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * sandboxfilechooserdialog.h: Description of my API compared to the original
+    one.
+    * sandboxfilechooserdialog{.c,.h,dbuswrapper.c}: Almost all configuration
+    methods exported on DBus now.
+
+    * sandboxfilechooserdialog{.c,.h}: Most retrieval methods implemented in the
+    underlying class, not exported yet (GDBus-codegen experimentation coming).
+    
+    * README: more API examples.
+    
+2014-04-29  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * sandboxfilechooserdialog{.c,.h,dbuswrapper.c}: Implemented most basic
+    methods.
+
+    * README: More usage examples.
+
 2014-04-28  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
     * Makefile.am: Refactored the app and renamed it sandboxutilsd.
