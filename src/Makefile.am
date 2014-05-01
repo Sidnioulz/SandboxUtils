@@ -2,8 +2,14 @@ AM_CPPFLAGS = -Wall $(DBUS_CFLAGS) $(GTK_CFLAGS) $(SYSTEMD_CFLAGS)
 AM_LDFLAGS = $(DBUS_LIBS) $(GTK_LIBS) $(SYSTEMD_LIBS)
 bin_PROGRAMS = sandboxutilsd
 
+if DEBUG
+  AM_CPPFLAGS += -ggdb3 -O0
+else !DEBUG
+  AM_CPPFLAGS += -O2 -DNDEBUG
+endif !DEBUG
+
 ## SandboxUtilsD
-sandboxutilsd_CPPFLAGS = -DG_LOG_DOMAIN=\"sandboxutilsd\" $(AM_CPPFLAGS) -ggdb
+sandboxutilsd_CPPFLAGS = -DG_LOG_DOMAIN=\"sandboxutilsd\" $(AM_CPPFLAGS)
 
 sandboxutilsd_SOURCES = sandboxutilsd.c \
 		sandboxutilsmarshals.c \

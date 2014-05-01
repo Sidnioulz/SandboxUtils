@@ -73,6 +73,9 @@
 #include "sandboxfilechooserdialog.h"
 #include "sandboxutilsmarshals.h"
 
+// Needed when -O0 is turned on
+extern const gchar * g_error_get_message (GError *err);
+
 struct _SandboxFileChooserDialogPrivate
 {
   GtkWidget             *dialog;      /* pointer to the #GtkFileChooserDialog */
@@ -1603,8 +1606,6 @@ sfcd_list_shortcut_folder_uris (SandboxFileChooserDialog   *self,
 
   return succeeded;
 }
-
-
 
 
 

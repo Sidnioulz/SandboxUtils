@@ -11,6 +11,7 @@ AC_CONFIG_MACRO_DIR([m4])
 SYSTEMD_REQUIRED=212
 
 # Checks for programs.
+CFLAGS=""
 AC_PROG_CC
 PKG_PROG_PKG_CONFIG
 
@@ -42,6 +43,15 @@ AC_SUBST(SYSTEMD_USER_DIR)
 AC_SUBST(SYSTEMD_SYSTEM_DIR)
 AC_DEFINE_UNQUOTED(SYSTEMD_USER_DIR, "$SYSTEMD_USER_DIR", [Where user services dir for Systemd is])
 AC_DEFINE_UNQUOTED(SYSTEMD_SYSTEM_DIR, "$SYSTEMD_SYSTEM_DIR", [Where system services dir for Systemd is])
+
+AC_ARG_ENABLE([debug],
+[  --enable-debug    Turn on debugging],
+[case "${enableval}" in
+  yes) debug=true ;;
+  no)  debug=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
+esac],[debug=false])
+AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
 
 AM_INIT_AUTOMAKE([subdir-objects -Wall])
