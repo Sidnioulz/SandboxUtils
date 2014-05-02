@@ -488,6 +488,100 @@ on_handle_get_show_hidden (SfcdDbusWrapper        *interface,
 }
 
 static gboolean
+on_handle_set_do_overwrite_confirmation (SfcdDbusWrapper        *interface,
+                                         GDBusMethodInvocation  *invocation,
+                                         const gchar            *dialog_id,
+                                         const gboolean          do_overwrite_confirmation,
+                                         gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SandboxUtilsClient         *cli        = user_data;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    if (sfcd_set_do_overwrite_confirmation (sfcd, do_overwrite_confirmation, &error))
+      sfcd_dbus_wrapper__complete_set_do_overwrite_confirmation (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_get_do_overwrite_confirmation (SfcdDbusWrapper        *interface,
+                                         GDBusMethodInvocation  *invocation,
+                                         const gchar            *dialog_id,
+                                         gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SandboxUtilsClient         *cli        = user_data;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    gboolean do_overwrite_confirmation;
+
+    if (sfcd_get_do_overwrite_confirmation (sfcd, &do_overwrite_confirmation, &error))
+      sfcd_dbus_wrapper__complete_get_do_overwrite_confirmation (interface, invocation, do_overwrite_confirmation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_set_create_folders (SfcdDbusWrapper        *interface,
+                              GDBusMethodInvocation  *invocation,
+                              const gchar            *dialog_id,
+                              const gboolean          create_folders,
+                              gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SandboxUtilsClient         *cli        = user_data;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    if (sfcd_set_create_folders (sfcd, create_folders, &error))
+      sfcd_dbus_wrapper__complete_set_create_folders (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_get_create_folders (SfcdDbusWrapper        *interface,
+                              GDBusMethodInvocation  *invocation,
+                              const gchar            *dialog_id,
+                              gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SandboxUtilsClient         *cli        = user_data;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    gboolean create_folders;
+
+    if (sfcd_get_create_folders (sfcd, &create_folders, &error))
+      sfcd_dbus_wrapper__complete_get_create_folders (interface, invocation, create_folders);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
 on_handle_set_current_name (SfcdDbusWrapper        *interface,
                            GDBusMethodInvocation  *invocation,
                            const gchar            *dialog_id,
@@ -1017,6 +1111,10 @@ sfcd_dbus_on_bus_acquired (GDBusConnection *connection,
   g_signal_connect (info->interface, "handle-get-select-multiple", G_CALLBACK (on_handle_get_select_multiple), _get_client ());
   g_signal_connect (info->interface, "handle-set-show-hidden", G_CALLBACK (on_handle_set_show_hidden), _get_client ());
   g_signal_connect (info->interface, "handle-get-show-hidden", G_CALLBACK (on_handle_get_show_hidden), _get_client ());
+  g_signal_connect (info->interface, "handle-set-do-overwrite-confirmation", G_CALLBACK (on_handle_set_do_overwrite_confirmation), _get_client ());
+  g_signal_connect (info->interface, "handle-get-do-overwrite-confirmation", G_CALLBACK (on_handle_get_do_overwrite_confirmation), _get_client ());
+  g_signal_connect (info->interface, "handle-set-create-folders", G_CALLBACK (on_handle_set_create_folders), _get_client ());
+  g_signal_connect (info->interface, "handle-get-create-folders", G_CALLBACK (on_handle_get_create_folders), _get_client ());
   g_signal_connect (info->interface, "handle-set-current-name", G_CALLBACK (on_handle_set_current_name), _get_client ());
   g_signal_connect (info->interface, "handle-set-filename", G_CALLBACK (on_handle_set_filename), _get_client ());
   g_signal_connect (info->interface, "handle-set-current-folder", G_CALLBACK (on_handle_set_current_folder), _get_client ());

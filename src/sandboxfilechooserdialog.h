@@ -202,22 +202,17 @@ sfcd_get_show_hidden (SandboxFileChooserDialog  *self,
 
 gboolean
 sfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
-                      gboolean                   do_overwrite_confirmation,
-                      GError                   **error);
+                                    gboolean                   do_overwrite_confirmation,
+                                    GError                   **error);
 
 gboolean
 sfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
-                      gboolean                  *do_overwrite_confirmation,
-                      GError                   **error);
+                                    gboolean                  *do_overwrite_confirmation,
+                                    GError                   **error);
 
 gboolean
 sfcd_set_create_folders (SandboxFileChooserDialog  *self,
                          gboolean                   create_folders,
-                         GError                   **error);
-
-gboolean
-sfcd_get_create_folders (SandboxFileChooserDialog  *self,
-                         gboolean                  *create_folders,
                          GError                   **error);
 
 gboolean

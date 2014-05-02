@@ -1034,6 +1034,197 @@ sfcd_get_show_hidden (SandboxFileChooserDialog *self,
   return succeeded;
 }
 
+
+gboolean
+sfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
+                                    gboolean                   do_overwrite_confirmation,
+                                    GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetDoOverwriteConfirmation: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 _B (do_overwrite_confirmation));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetDoOverwriteConfirmation: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (self->priv->dialog), do_overwrite_confirmation);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetDoOverwriteConfirmation: dialog '%s' ('%s') now has show-hidden '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (do_overwrite_confirmation));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
+                                    gboolean                  *result,
+                                    GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (result != NULL, FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_QUERY,
+                 "SandboxFileChooserDialog.GetDoOverwriteConfirmation: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *result = gtk_file_chooser_get_do_overwrite_confirmation (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetDoOverwriteConfirmation: dialog '%s' ('%s') has show-hidden '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (*result));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_set_create_folders (SandboxFileChooserDialog  *self,
+                         gboolean                   create_folders,
+                         GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SetCreateFolders: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+                 _B (create_folders));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SetCreateFolders: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              self->id,
+              gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_set_create_folders (GTK_FILE_CHOOSER (self->priv->dialog), create_folders);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SetCreateFolders: dialog '%s' ('%s') now has show-hidden '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (create_folders));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+gboolean
+sfcd_get_create_folders (SandboxFileChooserDialog  *self,
+                         gboolean                  *result,
+                         GError                   **error)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+  g_return_val_if_fail (result != NULL, FALSE);
+  g_return_val_if_fail (error != NULL, FALSE);
+
+  gboolean succeeded = FALSE;
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_QUERY,
+                 "SandboxFileChooserDialog.GetCreateFolders: dialog '%s' ('%s') is already running and cannot be queried.\n",
+                 self->id,
+                 gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    *result = gtk_file_chooser_get_create_folders (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.GetCreateFolders: dialog '%s' ('%s') has show-hidden '%s'.\n",
+            self->id,
+            gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
+            _B (*result));
+
+    succeeded = TRUE;
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return succeeded;
+}
+
+
+
+
+
 gboolean
 sfcd_set_current_name (SandboxFileChooserDialog  *self,
                        const gchar               *name,

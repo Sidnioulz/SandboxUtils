@@ -64,6 +64,22 @@
 			 <arg type='s' name='dialog_id' direction='in' />
 			 <arg type='b' name='show_hidden' direction='out' />
 		 </method>
+		 <method name='SetDoOverwriteConfirmation'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='b' name='do_overwrite_confirmation' direction='in' />
+		 </method>
+		 <method name='GetDoOverwriteConfirmation'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='b' name='do_overwrite_confirmation' direction='out' />
+		 </method>
+		 <method name='SetCreateFolders'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='b' name='create_folders' direction='in' />
+		 </method>
+		 <method name='GetCreateFolders'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='b' name='create_folders' direction='out' />
+		 </method>
 		 <method name='SetCurrentName'>
 			 <arg type='s' name='dialog_id' direction='in' />
 			 <arg type='s' name='name' direction='in' />
