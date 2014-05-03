@@ -3,6 +3,8 @@
 - Add full vanilla API to server via a DBus interface
 - Build GtkFileChooserSandboxDialog that uses this DBus interface to redirect all calls
 - Strenghten server with client management, per-client limits, and hooks
+- Really, if the dialog receives a destroyed signal I should kill the SFCD
+- Look up gtk_window_set_transient_for (GTK_WINDOW (result), parent);
 
 #Hardening
 - Watchdog on the server, with a functioning DBus/systemd socket activation
