@@ -404,6 +404,12 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *self,
  *   GFile *	gtk_file_chooser_get_file ()
  *   GSList *	gtk_file_chooser_get_files ()
  * _____________________________________________________________________________
+ * API CHANGE: improving the override confirmation API
+ *
+ * Improve the override confirmation API by adding a method to generate a new
+ * filename from the client's callback, with a scheme under the control of the
+ * server (avoids arbitrary names).
+ * _____________________________________________________________________________
  */
 
 
