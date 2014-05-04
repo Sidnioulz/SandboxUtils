@@ -2713,7 +2713,7 @@ sfcd_get_uris (SandboxFileChooserDialog   *self,
 }
 
 /**
- * sfcd_gett_current_folder_uri:
+ * sfcd_get_current_folder_uri:
  * @dialog: a #SandboxFileChooserDialog
  * @error: a placeholder for a #GError
  *
