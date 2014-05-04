@@ -1,18 +1,23 @@
-# Server
-- Build demo server with "stateful" dialog (internally, a vanilla GtkFileChooserDialog)
-- Add full vanilla API to server via a DBus interface
-- Build GtkFileChooserSandboxDialog that uses this DBus interface to redirect all calls
-- Strenghten server with client management, per-client limits, and hooks
+# Library
+- Finish GtkFileChooserDialog API (selections and filters)
+- Design new preview widgets, new extra widgets, new autocompletion, etc. (see sfcd.h)
+- Do signal management and property passing in SFCD
+- Write Remote FCD
 - Really, if the dialog receives a destroyed signal I should kill the SFCD
-- Look up gtk_window_set_transient_for (GTK_WINDOW (result), parent);
+
+# Server
+- Client management
+- Look up gtk_window_set_transient_for (GTK_WINDOW (result), parent) for wayland part
+- Strenghten server with client management, per-client limits, and hooks
 
 #Hardening
 - Watchdog on the server, with a functioning DBus/systemd socket activation
-- Per-client server sub-process, API hardening and
-- Build a properlike sandbox, marra!
+- Per-client server sub-process?
+- Build a properlike sandbox and launcher!
 
 # And giving it love
-- Share DBus
+- Share DBus mgt between APIs
+- Other classes!
 - XDG folders work
 - All exposed FS can be made read-write, kept consist
 - Extend to use/cases, discuss with DE on integration
