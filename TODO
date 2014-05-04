@@ -1,0 +1,23 @@
+# Library
+- Finish GtkFileChooserDialog API (selections and filters)
+- Design new preview widgets, new extra widgets, new autocompletion, etc. (see sfcd.h)
+- Do signal management and property passing in SFCD
+- Write Remote FCD
+- Really, if the dialog receives a destroyed signal I should kill the SFCD
+
+# Server
+- Client management
+- Look up gtk_window_set_transient_for (GTK_WINDOW (result), parent) for wayland part
+- Strenghten server with client management, per-client limits, and hooks
+
+#Hardening
+- Watchdog on the server, with a functioning DBus/systemd socket activation
+- Per-client server sub-process?
+- Build a properlike sandbox and launcher!
+
+# And giving it love
+- Share DBus mgt between APIs
+- Other classes!
+- XDG folders work
+- All exposed FS can be made read-write, kept consist
+- Extend to use/cases, discuss with DE on integration
