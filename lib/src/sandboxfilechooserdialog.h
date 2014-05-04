@@ -41,6 +41,7 @@ G_BEGIN_DECLS
  *  or queried.
  * @SFCD_DATA_RETRIEVAL: Indicates the dialog successfully ran and the selection
  *  of the user can now be retrieved.
+ * @SFCD_LAST_STATE: Should never occur. Equivalent to %SFCD_WRONG_STATE.
  *
  * Describes the current state of a #SandboxFileChooserDialog.
  */
@@ -49,6 +50,7 @@ typedef enum {
   SFCD_CONFIGURATION   = 1,
   SFCD_RUNNING         = 2,
   SFCD_DATA_RETRIEVAL  = 3,
+  SFCD_LAST_STATE      = 4,
 } SfcdState;
 
 /**
@@ -93,7 +95,6 @@ typedef enum {
   SFCD_ERROR_UNKNOWN
 } SfcdErrorCode;
 
-
 #define SANDBOX_TYPE_FILE_CHOOSER_DIALOG            (sfcd_get_type ())
 #define SANDBOX_FILE_CHOOSER_DIALOG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SANDBOX_TYPE_FILE_CHOOSER_DIALOG, SandboxFileChooserDialog))
 #define SANDBOX_IS_FILE_CHOOSER_DIALOG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SANDBOX_TYPE_FILE_CHOOSER_DIALOG))
@@ -103,28 +104,72 @@ typedef enum {
 
 typedef struct _SandboxFileChooserDialog        SandboxFileChooserDialog;
 typedef struct _SandboxFileChooserDialogClass   SandboxFileChooserDialogClass;
-typedef struct _SandboxFileChooserDialogPrivate SandboxFileChooserDialogPrivate;
 
 struct _SandboxFileChooserDialog
 {
   GObject                             parent_instance;
-  SandboxFileChooserDialogPrivate    *priv;
-  gchar                              *id;
 };
 
 struct _SandboxFileChooserDialogClass
 {
   GObjectClass parent_class;
   
+  /* Pointers to virtual methods implemented by local and remote dialogs */
+  void                 (*destroy)                       (SandboxFileChooserDialog *);
+  SfcdState            (*get_state)                     (SandboxFileChooserDialog *);
+  const gchar *        (*get_state_printable)           (SandboxFileChooserDialog *);
+  const gchar *        (*get_dialog_title)              (SandboxFileChooserDialog *);
+  gboolean             (*is_running)                    (SandboxFileChooserDialog *);
+  const gchar *        (*get_id)                        (SandboxFileChooserDialog *);
+  void                 (*run)                           (SandboxFileChooserDialog *, GError **);
+  void                 (*present)                       (SandboxFileChooserDialog *, GError **);
+  void                 (*cancel_run)                    (SandboxFileChooserDialog *, GError **);
+  void                 (*set_action)                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
+  GtkFileChooserAction (*get_action)                    (SandboxFileChooserDialog *, GError **);
+  void                 (*set_local_only)                (SandboxFileChooserDialog *, gboolean, GError **);
+  gboolean             (*get_local_only)                (SandboxFileChooserDialog *, GError **);
+  void                 (*set_select_multiple)           (SandboxFileChooserDialog *, gboolean, GError **);
+  gboolean             (*get_select_multiple)           (SandboxFileChooserDialog *, GError **);
+  void                 (*set_show_hidden)               (SandboxFileChooserDialog *, gboolean, GError **);
+  gboolean             (*get_show_hidden)               (SandboxFileChooserDialog *, GError **);
+  void                 (*set_do_overwrite_confirmation) (SandboxFileChooserDialog *, gboolean, GError **);
+  gboolean             (*get_do_overwrite_confirmation) (SandboxFileChooserDialog *, GError **);
+  void                 (*set_create_folders)            (SandboxFileChooserDialog *, gboolean, GError **);
+  gboolean             (*get_create_folders)            (SandboxFileChooserDialog *, GError **);
+  void                 (*set_current_name)              (SandboxFileChooserDialog *, const gchar *, GError **);
+  void                 (*set_filename)                  (SandboxFileChooserDialog *, const gchar *, GError **);
+  void                 (*set_current_folder)            (SandboxFileChooserDialog *, const gchar *, GError **);
+  void                 (*set_uri)                       (SandboxFileChooserDialog *, const gchar *, GError **);
+  void                 (*set_current_folder_uri)        (SandboxFileChooserDialog *, const gchar *, GError **);
+  gboolean             (*add_shortcut_folder)           (SandboxFileChooserDialog *, const gchar *, GError **);
+  gboolean             (*remove_shortcut_folder)        (SandboxFileChooserDialog *, const gchar *, GError **);
+  GSList *             (*list_shortcut_folders)         (SandboxFileChooserDialog *, GError **);
+  gboolean             (*add_shortcut_folder_uri)       (SandboxFileChooserDialog *, const gchar *, GError **);
+  gboolean             (*remove_shortcut_folder_uri)    (SandboxFileChooserDialog *, const gchar *, GError **);
+  GSList *             (*list_shortcut_folder_uris)     (SandboxFileChooserDialog *, GError **);
+  gchar *              (*get_current_name)              (SandboxFileChooserDialog *, GError **);
+  gchar *              (*get_filename)                  (SandboxFileChooserDialog *, GError **);
+  GSList *             (*get_filenames)                 (SandboxFileChooserDialog *, GError **);
+  gchar *              (*get_current_folder)            (SandboxFileChooserDialog *, GError **);
+  gchar *              (*get_uri)                       (SandboxFileChooserDialog *, GError **);
+  GSList *             (*get_uris)                      (SandboxFileChooserDialog *, GError **);
+  gchar *              (*get_current_folder_uri)        (SandboxFileChooserDialog *, GError **);
+
+
+  /* Class signals */
+  //TODO whole signal thing
   guint run_finished_signal;
 };
 
 GType sfcd_get_type (void);
 
-
 /* GENERIC METHODS */
 SandboxFileChooserDialog *
-sfcd_new                  (GtkWidget *gtkdialog); //FIXME
+sfcd_new (const gchar *title,
+          GtkWindow *parent,
+          GtkFileChooserAction action,
+          const gchar *first_button_text,
+          ...);
 
 void
 sfcd_destroy              (SandboxFileChooserDialog *dialog);
@@ -140,6 +185,9 @@ sfcd_get_dialog_title     (SandboxFileChooserDialog *dialog);
 
 gboolean
 sfcd_is_running           (SandboxFileChooserDialog *dialog);
+
+const gchar *
+sfcd_get_id               (SandboxFileChooserDialog *dialog);
 
 
 /* RUNNING METHODS */
@@ -266,10 +314,6 @@ sfcd_list_shortcut_folder_uris     (SandboxFileChooserDialog  *dialog,
 
 
 /* DATA RERIEVAL METHODS */
-gchar *
-sfcd_get_current_name       (SandboxFileChooserDialog   *dialog,
-                             GError                    **error);
-
 gchar *
 sfcd_get_current_name       (SandboxFileChooserDialog   *dialog,
                              GError                    **error);
