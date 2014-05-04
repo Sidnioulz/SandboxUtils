@@ -245,7 +245,9 @@ on_handle_run (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_run (sfcd, &error))
+    sfcd_run (sfcd, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_run (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -267,7 +269,9 @@ on_handle_present (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_present (sfcd, &error))
+    sfcd_present (sfcd, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_present (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -289,7 +293,9 @@ on_handle_cancel_run (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_cancel_run (sfcd, &error))
+    sfcd_cancel_run (sfcd, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_cancel_run (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -312,7 +318,9 @@ on_handle_set_action (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_action (sfcd, action, &error))
+    sfcd_set_action (sfcd, action, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_action (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -334,9 +342,9 @@ on_handle_get_action (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gint action;
+    gint action = sfcd_get_action (sfcd, &error);
 
-    if (sfcd_get_action (sfcd, &action, &error))
+    if (!error)
       sfcd_dbus_wrapper__complete_get_action (interface, invocation, action);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -359,7 +367,9 @@ on_handle_set_local_only (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_local_only (sfcd, local_only, &error))
+    sfcd_set_local_only (sfcd, local_only, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_local_only (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -381,9 +391,9 @@ on_handle_get_local_only (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gboolean local_only;
+    gboolean local_only = sfcd_get_local_only (sfcd, &error);
 
-    if (sfcd_get_local_only (sfcd, &local_only, &error))
+    if (!error)
       sfcd_dbus_wrapper__complete_get_local_only (interface, invocation, local_only);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -406,7 +416,9 @@ on_handle_set_select_multiple (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_select_multiple (sfcd, select_multiple, &error))
+    sfcd_set_select_multiple (sfcd, select_multiple, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_select_multiple (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -428,9 +440,9 @@ on_handle_get_select_multiple (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gboolean select_multiple;
+    gboolean select_multiple = sfcd_get_select_multiple (sfcd, &error);
 
-    if (sfcd_get_select_multiple (sfcd, &select_multiple, &error))
+    if (!error)
       sfcd_dbus_wrapper__complete_get_select_multiple (interface, invocation, select_multiple);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -453,7 +465,9 @@ on_handle_set_show_hidden (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_show_hidden (sfcd, show_hidden, &error))
+    sfcd_set_show_hidden (sfcd, show_hidden, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_show_hidden (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -475,9 +489,9 @@ on_handle_get_show_hidden (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gboolean show_hidden;
+    gboolean show_hidden = sfcd_get_show_hidden (sfcd, &error);
 
-    if (sfcd_get_show_hidden (sfcd, &show_hidden, &error))
+    if (!error)
       sfcd_dbus_wrapper__complete_get_show_hidden (interface, invocation, show_hidden);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -500,7 +514,9 @@ on_handle_set_do_overwrite_confirmation (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_do_overwrite_confirmation (sfcd, do_overwrite_confirmation, &error))
+    sfcd_set_do_overwrite_confirmation (sfcd, do_overwrite_confirmation, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_do_overwrite_confirmation (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -522,9 +538,9 @@ on_handle_get_do_overwrite_confirmation (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gboolean do_overwrite_confirmation;
+    gboolean do_overwrite_confirmation = sfcd_get_do_overwrite_confirmation (sfcd, &error);
 
-    if (sfcd_get_do_overwrite_confirmation (sfcd, &do_overwrite_confirmation, &error))
+    if (!error)
       sfcd_dbus_wrapper__complete_get_do_overwrite_confirmation (interface, invocation, do_overwrite_confirmation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -547,7 +563,9 @@ on_handle_set_create_folders (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_create_folders (sfcd, create_folders, &error))
+    sfcd_set_create_folders (sfcd, create_folders, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_create_folders (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -569,9 +587,9 @@ on_handle_get_create_folders (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gboolean create_folders;
+    gboolean create_folders = sfcd_get_create_folders (sfcd, &error);
 
-    if (sfcd_get_create_folders (sfcd, &create_folders, &error))
+    if (!error)
       sfcd_dbus_wrapper__complete_get_create_folders (interface, invocation, create_folders);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -594,7 +612,9 @@ on_handle_set_current_name (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_current_name (sfcd, current_name, &error))
+    sfcd_set_current_name (sfcd, current_name, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_current_name (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -617,7 +637,9 @@ on_handle_set_filename (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_filename (sfcd, filename, &error))
+    sfcd_set_filename (sfcd, filename, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_filename (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -640,7 +662,9 @@ on_handle_set_current_folder (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_current_folder (sfcd, current_folder, &error))
+    sfcd_set_current_folder (sfcd, current_folder, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_current_folder (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -663,7 +687,9 @@ on_handle_set_uri (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_uri (sfcd, uri, &error))
+    sfcd_set_uri (sfcd, uri, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_uri (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -686,7 +712,9 @@ on_handle_set_current_folder_uri (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_set_current_folder_uri (sfcd, current_folder_uri, &error))
+    sfcd_set_current_folder_uri (sfcd, current_folder_uri, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_set_current_folder_uri (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -709,7 +737,9 @@ on_handle_add_shortcut_folder (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_add_shortcut_folder (sfcd, folder, &error))
+    sfcd_add_shortcut_folder (sfcd, folder, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_add_shortcut_folder (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -732,7 +762,9 @@ on_handle_remove_shortcut_folder (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_remove_shortcut_folder (sfcd, folder, &error))
+    sfcd_remove_shortcut_folder (sfcd, folder, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_remove_shortcut_folder (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -754,9 +786,9 @@ on_handle_list_shortcut_folders (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    GSList *list = NULL;
+    GSList *list = sfcd_list_shortcut_folders (sfcd, &error);
 
-    if (sfcd_list_shortcut_folders (sfcd, &list, &error))
+    if (!error)
     {
       // Allocate for the list and a NULL element at the end
       const gchar **dbus_list = g_malloc (sizeof (gchar *) * (g_slist_length (list) + 1));
@@ -795,7 +827,9 @@ on_handle_add_shortcut_folder_uri (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_add_shortcut_folder_uri (sfcd, uri, &error))
+    sfcd_add_shortcut_folder_uri (sfcd, uri, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_add_shortcut_folder_uri (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -818,7 +852,9 @@ on_handle_remove_shortcut_folder_uri (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    if (sfcd_remove_shortcut_folder_uri (sfcd, uri, &error))
+    sfcd_remove_shortcut_folder_uri (sfcd, uri, &error);
+
+    if (!error)
       sfcd_dbus_wrapper__complete_remove_shortcut_folder_uri (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
@@ -840,9 +876,9 @@ on_handle_list_shortcut_folder_uris (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    GSList *list = NULL;
+    GSList *list = sfcd_list_shortcut_folder_uris (sfcd, &error);
 
-    if (sfcd_list_shortcut_folder_uris (sfcd, &list, &error))
+    if (!error)
     {
       // Allocate for the list and a NULL element at the end
       const gchar **dbus_list = g_malloc (sizeof (gchar *) * (g_slist_length (list) + 1));
@@ -880,9 +916,9 @@ on_handle_get_current_name (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gchar *name;
+    gchar *name = sfcd_get_current_name (sfcd, &error);
     
-    if (sfcd_get_current_name (sfcd, &name, &error))
+    if (!error)
     {
       sfcd_dbus_wrapper__complete_get_current_name (interface, invocation, name);
       g_free (name);
@@ -907,9 +943,9 @@ on_handle_get_filename (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gchar *filename;
+    gchar *filename = sfcd_get_filename (sfcd, &error);
     
-    if (sfcd_get_filename (sfcd, &filename, &error))
+    if (!error)
     {
       sfcd_dbus_wrapper__complete_get_filename (interface, invocation, filename);
       g_free (filename);
@@ -934,9 +970,9 @@ on_handle_get_filenames (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    GSList *list = NULL;
+    GSList *list = sfcd_get_filenames (sfcd, &error);
 
-    if (sfcd_get_filenames (sfcd, &list, &error))
+    if (!error)
     {
       // Allocate for the list and a NULL element at the end
       const gchar **dbus_list = g_malloc (sizeof (gchar *) * (g_slist_length (list) + 1));
@@ -974,9 +1010,9 @@ on_handle_get_current_folder (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gchar *current_folder;
+    gchar *current_folder = sfcd_get_current_folder (sfcd, &error);
     
-    if (sfcd_get_current_folder (sfcd, &current_folder, &error))
+    if (!error)
     {
       sfcd_dbus_wrapper__complete_get_current_folder (interface, invocation, current_folder);
       g_free (current_folder);
@@ -1001,9 +1037,9 @@ on_handle_get_uri (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gchar *uri;
+    gchar *uri = sfcd_get_uri (sfcd, &error);
     
-    if (sfcd_get_uri (sfcd, &uri, &error))
+    if (!error)
     {
       sfcd_dbus_wrapper__complete_get_uri (interface, invocation, uri);
       g_free (uri);
@@ -1028,9 +1064,9 @@ on_handle_get_uris (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    GSList *list = NULL;
+    GSList *list = sfcd_get_uris (sfcd, &error);
 
-    if (sfcd_get_uris (sfcd, &list, &error))
+    if (!error)
     {
       // Allocate for the list and a NULL element at the end
       const gchar **dbus_list = g_malloc (sizeof (gchar *) * (g_slist_length (list) + 1));
@@ -1068,9 +1104,9 @@ on_handle_get_current_folder_uri (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
-    gchar *uri;
+    gchar *uri = sfcd_get_current_folder_uri (sfcd, &error);
     
-    if (sfcd_get_current_folder_uri (sfcd, &uri, &error))
+    if (!error)
     {
       sfcd_dbus_wrapper__complete_get_current_folder_uri (interface, invocation, uri);
       g_free (uri);

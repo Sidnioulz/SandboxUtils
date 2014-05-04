@@ -2,18 +2,19 @@
  * sandboxfilechooserdialog.c: file chooser dialog for sandboxed apps
  *
  * Copyright (C) 2014 Steve Dodier-Lazaro <sidnioulz@gmail.com>
+ * Copyright (C) 2003, Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License as
+ * modify it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 3 of the
  * License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
+ * You should have received a copy of the GNU Lesser General Public
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Steve Dodier-Lazaro <sidnioulz@gmail.com>
@@ -41,12 +42,12 @@
  *
  * It differs with other dialogs in that it has a #SfcdState among:
  * 
- * @SFCD_CONFIGURATION: initial state, in which the dialog's behavior, current
+ * %SFCD_CONFIGURATION: initial state, in which the dialog's behavior, current
  *   file and directory, etc. can be modified to match your application's needs
- * @SFCD_RUNNING: switched to by calling #sfcd_run, in which the dialog cannot
- *   be modified or queried and can only be cancelled (see #sfcd_cancel_run),
- *   presented (#sfcd_present) or destroyed (#sfcd_destroy)
- * @SFCD_DATA_RETRIEVAL: retrieval: switched to automatically after a successful
+ * %SFCD_RUNNING: switched to by calling sfcd_run(), in which the dialog cannot
+ *   be modified or queried and can only be cancelled (see sfcd_cancel_run()),
+ *   presented (sfcd_present()) or destroyed (sfcd_destroy())
+ * %SFCD_DATA_RETRIEVAL: retrieval: switched to automatically after a successful
  *   run, in which the dialog cannot be modified but the file(s) currently
  *   selected can be queried as in the original #GtkFileChooserDialog
  *
@@ -56,15 +57,38 @@
  * state in a rather conservative way, both to provide consistency on the
  * restrictions it imposes and to allow some level of object reuse.
  *
- * The #SFCD_CONFIGURATION state... getters -> only in conf/retriev, fail in run
- * setters -> only in conf, will switch retriev back to conf TODO
+ * The %SFCD_CONFIGURATION state is how a dialog starts. In this mode, you can
+ * call most setter methods to prepare the dialog before displaying it to the 
+ * user. You cannot yet retrieve any chosen file since the user hasn't seen the
+ * dialog! You cannot call any configuration method while the dialog is running
+ * (to prevent you from forcing the user into accepting a certain file), and 
+ * calling configuration methods after the dialog has run will cause it to
+ * return to this state, so you can reconfigure and rerun the dialog easily. You
+ * should use sfcd_run() to switch to the next state.
  *
- * The #SFCD_RUNNING state TODO
+ * The %SFCD_RUNNING state occurs from the moment you call sfcd_run() until the
+ * moment the #SandboxFileChooserDialog::response signal is emitted. In this
+ * mode, you cannot modify or query the dialog at all. All you can do is cancel
+ * or destroy it, and present it to the user if need be. The dialog will either
+ * switch back to the %SFCD_CONFIGURATION mode if it was cancelled or destroyed
+ * (by you or by the user) or will transition to the %SFCD_DATA_RETRIEVAL mode
+ * if the user successfuly selected a file/folder to open or filename to save to.
  * 
- * The #SFCD_DATA_RETRIEVAL state TODO
+ * The %SFCD_DATA_RETRIEVAL state is for when the dialog has been successfully
+ * run. If the action of the dialog was @GTK_FILE_CHOOSER_ACTION_OPEN or
+ * @GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, retrieving the filenames selected by
+ * the user will grant your application access to these files (see sfcd_get_uri()).
+ * In the case of @GTK_FILE_CHOOSER_ACTION_SAVE or @GTK_FILE_CHOOSER_CREATE_FOLDER,
+ * you will be granted write access to the current name of the dialog upon 
+ * retrieving it (see sfcd_get_current_name ()).
+ *
+ * As of 0.4, it has not yet been decided whether your application will receive
+ * file paths or file descriptors or both in the %SFCD_DATA_RETRIEVAL state.
  *
  * Since: 0.3
- */
+ **/
+
+//TODO copy extra sections from gtkfilechooser such as gtkfilechooserdialog-setting-up
 
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -86,31 +110,6 @@ struct _SandboxFileChooserDialogPrivate
 
 G_DEFINE_TYPE_WITH_PRIVATE (SandboxFileChooserDialog, sfcd, G_TYPE_OBJECT)
 
-/*
- * TODO refactor this list e.g. setters/getters for config, so that it's clear
- * and easy to explain it
- * TODO document functions a la GNOME, and add custom doc for state display
- ***
- * Generic Methods:
- * Create -- initialises state to CONFIGURATION
- * Destroy -- object no longer usable
- * 
- ***
- * RUNNING Methods:
- * Run -- switches state from * to RUNNING
- * Present -- fails if not RUNNING
- * CancelRun -- switches state from RUNNING to CONFIGURATION
- * 
- * RUNNING Signals:
- * RunDone -- only occurs when running finishes, indicates state switches
- * 
- ***
- * CONFIGURATION Methods:
- * SetAction -- fails if RUNNING, switches state from DATA_RETRIEVAL to CONFIGURATION
- * GetAction -- fails if RUNNING
- * ...TODO 
- *
- */
 static void
 sfcd_init (SandboxFileChooserDialog *self)
 {
@@ -183,15 +182,21 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
   g_object_class->finalize = sfcd_finalize; /* class finalization, reverse of class init */
 }
 
-
 /**
  * sfcd_new:
  * @dialog: a #GtkFileChooserDialog
  * 
  * Creates a new instance of #SandboxFileChooserDialog and associates @dialog
- * with it. Fails if @dialog is %NULL. Free with #sfcd_destroy.
+ * with it. Fails if @dialog is %NULL. Free with sfcd_destroy(). FIXME
+ *
+ * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
  *
  * Since: 0.3
+ *
+ * Returns: the new dialog as a #SandboxFileChooserDialog
+ *
+ FIXME change the API to make it not use a GtkWidget
+ FIXME where are the properties? the ctor must handle and dispatch them
  **/
 SandboxFileChooserDialog *
 sfcd_new (GtkWidget *dialog)
@@ -214,11 +219,14 @@ sfcd_new (GtkWidget *dialog)
 
 /**
  * sfcd_destroy:
- * @self: a #SandboxFileChooserDialog
+ * @dialog: a #SandboxFileChooserDialog
  * 
  * Destroys the given instance of #SandboxFileChooserDialog. Internally, this
  * method only removes one reference to the dialog, so it may continue existing
  * if you still have other references to it.
+ * 
+ * This method can be called from any #SfcdState. It is equivalent to
+ * gtk_widget_destroy() in the GTK+ API.
  *
  * Since: 0.3
  **/
@@ -233,6 +241,18 @@ sfcd_destroy (SandboxFileChooserDialog *self)
   g_object_unref (self);
 }
 
+/**
+ * sfcd_get_state:
+ * @dialog: a #SandboxFileChooserDialog
+ * 
+ * Gets the current #SfcdState of an instance of #SandboxFileChooserDialog.
+ *
+ * This method can be called from any #SfcdState. It has no GTK+ equivalent.
+ *
+ * Returns: the state of the @dialog
+ *
+ * Since: 0.3
+ **/
 SfcdState
 sfcd_get_state (SandboxFileChooserDialog *self)
 {
@@ -241,6 +261,19 @@ sfcd_get_state (SandboxFileChooserDialog *self)
   return self->priv->state;
 }
 
+/**
+ * sfcd_get_state_printable:
+ * @dialog: a #SandboxFileChooserDialog
+ * 
+ * Gets the current #SfcdState of an instance of #SandboxFileChooserDialog,
+ * in the form of a string that can be displayed. The string is not localized.
+ *
+ * This method can be called from any #SfcdState. It has no GTK+ equivalent.
+ *
+ * Returns: the state of the @dialog in the form of a #G_TYPE_STRING
+ *
+ * Since: 0.3
+ **/
 const gchar *
 sfcd_get_state_printable  (SandboxFileChooserDialog *self)
 {
@@ -249,6 +282,20 @@ sfcd_get_state_printable  (SandboxFileChooserDialog *self)
   return SfcdStatePrintable [self->priv->state];
 }
 
+/**
+ * sfcd_get_dialog_title:
+ * @dialog: a #SandboxFileChooserDialog
+ * 
+ * Gets the title of the #GtkFileChooserDialog embedded in an instance of
+ * #SandboxFileChooserDialog. 
+ *
+ * This method can be called from any #SfcdState. It is equivalent to
+ * gtk_window_get_title() in the GTK+ API.
+ *
+ * Returns: the title of the dialog embedded within the @dialog
+ *
+ * Since: 0.3
+ **/
 const gchar *
 sfcd_get_dialog_title (SandboxFileChooserDialog *self)
 {
@@ -258,6 +305,19 @@ sfcd_get_dialog_title (SandboxFileChooserDialog *self)
   return gtk_window_get_title (GTK_WINDOW (self->priv->dialog));
 }
 
+/**
+ * sfcd_get_state:
+ * @dialog: a #SandboxFileChooserDialog
+ * 
+ * Returns whether an instance of #SandboxFileChooserDialog is currently running,
+ * e.g., it is in the %SFCD_RUNNING #SfcdState.
+ *
+ * This method can be called from any #SfcdState. It has no GTK+ equivalent.
+ * 
+ * Returns: whether the @dialog is running
+ *
+ * Since: 0.3
+ **/
 gboolean
 sfcd_is_running (SandboxFileChooserDialog *self)
 {
@@ -266,25 +326,54 @@ sfcd_is_running (SandboxFileChooserDialog *self)
   return self->priv->state == SFCD_RUNNING;
 }
 
+/**
+ * _sfcd_entry_sanity_check:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placehoder to register a #GError
+ * 
+ * Performs basic sanity checks and tries to fill the #GError if these fail. In
+ * the current API, this allows warning the callee if the @dialog is not correct
+ * or @error points to something else than NULL. This is useful because we can
+ * propagate the issue all the way back to the client and have them send a more
+ * meaningful bug report than "the API did not complain but did nothing".
+ *
+ * Returns: True if the sanity check succeeds, False if the @dialog or @error
+ * were not as expected
+ *
+ * Since: 0.4
+ */
+static gboolean
+_sfcd_entry_sanity_check (SandboxFileChooserDialog *self,
+                          GError                  **error)
+{
+  // At the very least this is needed for error reporting
+  g_return_val_if_fail (error != NULL, FALSE);
 
+  // If the callee forgot to clean their error before calling us...
+  if (*error != NULL)
+  {
+    g_prefix_error (error, 
+                    "%s",
+                    "SandboxFileChooserDialog._SanityCheck failed because an error "
+                    "was already set (this should never happen, please report a bug).\n");
 
+    return FALSE;
+  }
 
+  // If the callee gave us a non-valid SandboxFileChooserDialog
+  if (!SANDBOX_IS_FILE_CHOOSER_DIALOG (self))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_UNKNOWN,
+                 "SandboxFileChooserDialog._SanityCheck: the object at '%p' is not a SandboxFileChooserDialog.\n",
+                 self);
 
+    return FALSE;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return TRUE;
+}
 
 
 /* RUNNING METHODS */
@@ -393,6 +482,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
             d->sfcd->id, gtk_window_get_title (GTK_WINDOW (d->sfcd->priv->dialog)));
 
     // Emit a signal that informs of the deletion
+    // TODO "destroy/ed" signal?
     g_signal_emit (d->sfcd,
                    klass->run_finished_signal,
                    0, 
@@ -440,6 +530,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
       d->sfcd->priv->state = SFCD_DATA_RETRIEVAL;
     }
 
+    //TODO rename signal to match original API better
     g_signal_emit (d->sfcd,
                    klass->run_finished_signal,
                    0, 
@@ -460,14 +551,123 @@ G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 
-gboolean
+/**
+ * sfcd_run:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Starts running the @dialog in a separate #GMainLoop. Contrarily to the GTK+
+ * gtk_dialog_run() method advocated to run a #GtkFileChooserDialog, this method
+ * does not block until a response has been received by the dialog. One should
+ * register a callback on the #SandboxFileChooserDialog::response signal instead.
+ * For instance, consider the following code taken from the GTK+ documentation:
+ *
+ * <example id="gtkfilechooser-typical-usage">
+ * <title>Typical #GtkFileChooserDialog usage</title>
+ * <para>
+ * <informalexample><programlisting>
+ * GtkWidget *dialog;
+ *
+ * dialog = gtk_file_chooser_dialog_new ("Open File",
+ *                                       parent_window,
+ *                                       GTK_FILE_CHOOSER_ACTION_OPEN,
+ *                                       _("_Cancel"), GTK_RESPONSE_CANCEL,
+ *                                       _("_Open"), GTK_RESPONSE_ACCEPT,
+ *                                       NULL);
+ *
+ * if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+ *   {
+ *     char *filename;
+ *
+ *     filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+ *     open_file (filename);
+ *     g_free (filename);
+ *   }
+ *
+ * gtk_widget_destroy (dialog);
+ * </programlisting></informalexample>
+ * </para>
+ * With #SandboxUtils, you would instead do the following:
+ * <para>
+ * <informalexample><programlisting>
+ * static void
+ * on_open_dialog_response (SandboxFileChooserDialog *dialog,
+ *                          gint                      response_id,
+ *                          gpointer                  user_data)
+ * {
+ *   if (response_id == GTK_RESPONSE_OK)
+ *   {
+ *     GError *error = NULL;
+ *     gchar *filename = sfcd_get_filename (dialog, error);
+ * 
+ *     // Check for errors - the server might've crashed, or a security policy
+ *     // could be getting in the way.
+ *     if (!error)
+ *     {
+ *       my_app_open_file (filename);
+ *       g_free (filename);
+ *     }
+ *     else
+ *     {
+ *       my_app_report_error (error);
+ *       g_error_free (error);
+ *     }
+ *   }
+ * 
+ *   sfcd_destroy (dialog);
+ * }
+ * 
+ * [...]
+ * 
+ * void
+ * my_open_function ()
+ * {
+ *   SandboxFileChooserDialog *dialog;
+ * 
+ *   dialog = sfcd_new (TRUE, // use the remote dialog that passes through sandboxing
+ *                      "Open File",
+ *                      parent_window,
+ *                      GTK_FILE_CHOOSER_ACTION_OPEN,
+ *                      _("_Cancel"), GTK_RESPONSE_CANCEL,
+ *                      _("_Open"), GTK_RESPONSE_ACCEPT,
+ *                      NULL);
+ * 
+ *   // Ask the dialog to tell us when the user picked a file
+ *   g_signal_connect (dialog,
+ *                     "response",
+ *                     G_CALLBACK (on_open_dialog_response),
+ *                     user_data);
+ * 
+ *   GError *error = NULL;
+ *   sfcd_run (dialog, error);
+ * 
+ *   // Make sure to verify that the dialog is running
+ *   if (error)
+ *   {
+ *     my_app_report_error (error);
+ *     g_error_free (filename);
+ *   }
+ * }
+ * </programlisting></informalexample>
+ * </para>
+ * </example>
+ *
+ * Note that if the dialog was destroyed, you will never hear from it again. If
+ * you kept an extra reference to the dialog via g_object_ref(), make sure to
+ * also connect to #SandboxFileChooserDialog::destroy and to drop that reference
+ * when receiving this signal (with g_object_unref()). 
+ *
+ * This method can be called from the %SFCD_CONFIGURATION or %SFCD_DATA_RETRIEVAL
+ * states. It is roughly to gtk_dialog_run() in the GTK+ API. Do remember to
+ * check if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_run (SandboxFileChooserDialog *self,
           GError                  **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -536,22 +736,30 @@ sfcd_run (SandboxFileChooserDialog *self,
           self->id, gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
     gdk_threads_add_idle_full (G_PRIORITY_DEFAULT, _sfcd_run_func, d, NULL);
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_present:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Presents a currently running instance of #SandboxFileChooserDialog. This
+ * method fails if the @dialog is not running.
+ *
+ * This method belongs to the %SFCD_RUNNING state. It is equivalent to
+ * gtk_window_present() in the GTK+ API. Do remember to check if @error is set
+ * after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_present (SandboxFileChooserDialog  *self,
               GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -574,22 +782,39 @@ sfcd_present (SandboxFileChooserDialog  *self,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
     gtk_window_present (GTK_WINDOW (self->priv->dialog));
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_cancel_run:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Cancels a currently running instance of #SandboxFileChooserDialog. This
+ * method fails if the @dialog is not running. Internally, it hides the dialog's
+ * window which causes it to unmap, and the running loop will catch the unmap
+ * signal and emit a #SandboxFileChooserDialog::response signal. The
+ * @response_id will be set to GTK_RESPONSE_NONE, which you should ignore in
+ * the callbacks you connected to this signal. the @dialog will be back into a
+ * %SFCD_CONFIGURATION #SfcdState.
+ *
+ * After being cancelled, the @dialog still exists. If you no longer need it,
+ * destroy it with sfcd_destroy(). Note that you can also directly destroy the
+ * dialog while running.
+ *
+ * This method belongs to the %SFCD_RUNNING state. It is equivalent to
+ * gtk_window_hide() in the GTK+ API. Do remember to check if @error is set 
+ * after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_cancel_run (SandboxFileChooserDialog  *self,
                  GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -613,64 +838,36 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
 
     // This is enough to cause the run method to issue a GTK_RESPONSE_NONE
     gtk_widget_hide (self->priv->dialog);  
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-gboolean
+/* RUNNING METHODS */
+/**
+ * sfcd_set_action:
+ * @dialog: a #SandboxFileChooserDialog
+ * @action: the #GtkFileChooserAction that the dialog is performing
+ * @error: a placeholder for a #GError
+ * 
+ * Sets the #GtkFileChooserAction that the @dialog is performing. This influences
+ * whether the @dialog will allow your user to open or save files, or to select
+ * or create folders. Look up the #GtkFileChooser documentation for information
+ * on which types of are available.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_action() in the GTK+ API. Do remember to check if @error
+ * is set after running this method.
+ *
+ * Since: 0.4
+ **/
+void
 sfcd_set_action (SandboxFileChooserDialog  *self,
-                 gint32                     action,
+                 GtkFileChooserAction       action,
                  GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -704,25 +901,34 @@ sfcd_set_action (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             action);
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_get_action:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets the #GtkFileChooserAction that the @dialog is performing; See
+ * sfcd_set_action() for more information.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_get_action() in the GTK+ API. Do remember to check if @error
+ * is set after running this method. If set, the return value is undefined.
+ *
+ * Return value: the action that the dialog is performing
+ *
+ * Since: 0.4
+ **/
+GtkFileChooserAction
 sfcd_get_action (SandboxFileChooserDialog *self,
-                 gint32                   *result,
                  GError                  **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (result != NULL, FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  GtkFileChooserAction result = GTK_FILE_CHOOSER_ACTION_OPEN;
 
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), result);
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -739,31 +945,48 @@ sfcd_get_action (SandboxFileChooserDialog *self,
   }
   else
   {
-    *result = gtk_file_chooser_get_action (GTK_FILE_CHOOSER (self->priv->dialog));
+    result = gtk_file_chooser_get_action (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetAction: dialog '%s' ('%s') has action '%d'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            *result);
-
-    succeeded = TRUE;
+            result);
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return result;
 }
 
-gboolean
+/**
+ * sfcd_set_local_only:
+ * @dialog: a #SandboxFileChooserDialog
+ * @local_only: %TRUE if only local files can be selected
+ * @error: a placeholder for a #GError
+ * 
+ * Sets whether only local files can be selected in the dialog. If @local_only
+ * is %TRUE (the default), then the selected files are guaranteed to be
+ * accessible through the operating systems native file system and therefore
+ * the application only needs to worry about the filename functions in
+ * #SandboxFileChooserDialog, like sfcd_get_filename(), rather than the URI
+ * functions like sfcd_get_uri(),
+ *
+ * On some systems non-native files may still be available using the native
+ * filesystem via a userspace filesystem (FUSE).
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_local_only() in the GTK+ API. Do remember to check if
+ * @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_local_only (SandboxFileChooserDialog  *self,
                      gboolean                   local_only,
                      GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -797,25 +1020,35 @@ sfcd_set_local_only (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             _B (local_only));
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
+/**
+ * sfcd_get_local_only:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets whether only local files can be selected in the dialog; See
+ * sfcd_set_local_only() for more information.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_get_local_only() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Return value: %TRUE if only local files can be selected
+ *
+ * Since: 0.3
+ **/
 gboolean
-sfcd_get_local_only (SandboxFileChooserDialog *self,
-                    gboolean                 *result,
-                    GError                  **error)
+sfcd_get_local_only (SandboxFileChooserDialog  *self,
+                     GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (result != NULL, FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  gboolean result = FALSE;
 
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), result);
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -832,31 +1065,42 @@ sfcd_get_local_only (SandboxFileChooserDialog *self,
   }
   else
   {
-    *result = gtk_file_chooser_get_local_only (GTK_FILE_CHOOSER (self->priv->dialog));
+    result = gtk_file_chooser_get_local_only (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetLocalOnly: dialog '%s' ('%s') has local-only '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            _B (*result));
-
-    succeeded = TRUE;
+            _B (result));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return result;
 }
 
-gboolean
+/**
+ * sfcd_set_select_multiple:
+ * @dialog: a #SandboxFileChooserDialog
+ * @select_multiple: %TRUE if multiple files can be selected
+ * @error: a placeholder for a #GError
+ * 
+ * Sets whether multiple files can be selected in the dialog. This is
+ * only relevant if the action is set to be %GTK_FILE_CHOOSER_ACTION_OPEN or
+ * %GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_select_multiple() in the GTK+ API. Do remember to check
+ * if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_select_multiple (SandboxFileChooserDialog  *self,
                           gboolean                   select_multiple,
                           GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -890,25 +1134,35 @@ sfcd_set_select_multiple (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             _B (select_multiple));
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
+/**
+ * sfcd_get_select_multiple:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets whether multiple files can be selected in the dialog; See
+ * sfcd_set_select_multiple() for more information.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_get_select_multiple() in the GTK+ API. Do remember to check
+ * if @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Return value: %TRUE if multiple files can be selected
+ *
+ * Since: 0.3
+ **/
 gboolean
-sfcd_get_select_multiple (SandboxFileChooserDialog *self,
-                    gboolean                 *result,
-                    GError                  **error)
+sfcd_get_select_multiple (SandboxFileChooserDialog  *self,
+                          GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (result != NULL, FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  gboolean result = FALSE;
 
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), result);
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -925,31 +1179,40 @@ sfcd_get_select_multiple (SandboxFileChooserDialog *self,
   }
   else
   {
-    *result = gtk_file_chooser_get_select_multiple (GTK_FILE_CHOOSER (self->priv->dialog));
+    result = gtk_file_chooser_get_select_multiple (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetSelectMultiple: dialog '%s' ('%s') has select-multiple '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            _B (*result));
-
-    succeeded = TRUE;
+            _B (result));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return result;
 }
 
-gboolean
+/**
+ * sfcd_set_show_hidden:
+ * @dialog: a #SandboxFileChooserDialog
+ * @show_hidden: %TRUE if hidden files and folders should be displayed
+ * @error: a placeholder for a #GError
+ * 
+ * Sets whether hidden files and folders are displayed in the file dialog.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_show_hidden() in the GTK+ API. Do remember to check
+ * if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_show_hidden (SandboxFileChooserDialog  *self,
                       gboolean                   show_hidden,
                       GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -983,25 +1246,35 @@ sfcd_set_show_hidden (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             _B (show_hidden));
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
+/**
+ * sfcd_get_show_hidden:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets whether hidden files and folders are displayed in the dialog; See
+ * sfcd_set_show_hidden() for more information.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_get_show_hidden() in the GTK+ API. Do remember to check
+ * if @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Return value: %TRUE if hidden files and folders are displayed
+ *
+ * Since: 0.3
+ **/
 gboolean
 sfcd_get_show_hidden (SandboxFileChooserDialog *self,
-                     gboolean                 *result,
                      GError                  **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (result != NULL, FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  gboolean result = FALSE;
 
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), result);
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1018,32 +1291,53 @@ sfcd_get_show_hidden (SandboxFileChooserDialog *self,
   }
   else
   {
-    *result = gtk_file_chooser_get_show_hidden (GTK_FILE_CHOOSER (self->priv->dialog));
+    result = gtk_file_chooser_get_show_hidden (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetShowHidden: dialog '%s' ('%s') has show-hidden '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            _B (*result));
-
-    succeeded = TRUE;
+            _B (result));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return result;
 }
 
-
-gboolean
+/**
+ * sfcd_set_do_overwrite_confirmation:
+ * @dialog: a #SandboxFileChooserDialog
+ * @do_overwrite_confirmation: %TRUE to confirm overwriting in save mode
+ * @error: a placeholder for a #GError
+ * 
+ * Sets whether a dialog in %GTK_FILE_CHOOSER_ACTION_SAVE mode will present a
+ * confirmation dialog if the user types a file name that already exists. This
+ * is %FALSE by default.
+ *
+ * If set to %TRUE, the @dialog will emit the
+ * #GtkFileChooser::confirm-overwrite signal when appropriate.
+ *
+ * If all you need is the stock confirmation dialog, set this property to %TRUE.
+ * You can override the way confirmation is done by actually handling the
+ * #GtkFileChooser::confirm-overwrite signal; please refer to its documentation
+ * for the details. Please mind that you are only granted access to the actual
+ * filename or uri currently selected by the user. You need to use this API to
+ * obtain a new filename or uri that does not override an existing file (see
+ * sfcd_NOT_IMPLEMENTED_YET(). TODO
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_do_overwrite_confirmation() in the GTK+ API. Do remember
+ * to check if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
                                     gboolean                   do_overwrite_confirmation,
                                     GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1077,25 +1371,37 @@ sfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             _B (do_overwrite_confirmation));
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
+/**
+ * sfcd_get_do_overwrite_confirmation:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets whether a dialog is set to confirm for overwriting when the user types
+ * a file name that already exists; See sfcd_set_do_overwrite_confirmation() for
+ * more information.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_get_do_overwrite_confirmation() in the GTK+ API. Do remember
+ * to check if @error is set after running this method. If set, the return value
+ * is undefined.
+ *
+ * Return value: %TRUE if the dialog will present a confirmation dialog;
+ * %FALSE otherwise
+ *
+ * Since: 0.3
+ **/
 gboolean
 sfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
-                                    gboolean                  *result,
                                     GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (result != NULL, FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  gboolean result = FALSE;
 
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), result);
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1112,31 +1418,41 @@ sfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
   }
   else
   {
-    *result = gtk_file_chooser_get_do_overwrite_confirmation (GTK_FILE_CHOOSER (self->priv->dialog));
+    result = gtk_file_chooser_get_do_overwrite_confirmation (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetDoOverwriteConfirmation: dialog '%s' ('%s') has show-hidden '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            _B (*result));
-
-    succeeded = TRUE;
+            _B (result));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return result;
 }
 
-gboolean
+/**
+ * sfcd_set_create_folders:
+ * @dialog: a #SandboxFileChooserDialog
+ * @create_folders: %TRUE if the Create Folder button should be displayed
+ * @error: a placeholder for a #GError
+ * 
+ * Sets whether the dialog will offer to create new folders. This is only 
+ * relevant if the action is not set to be %GTK_FILE_CHOOSER_ACTION_OPEN.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_create_folders() in the GTK+ API. Do remember to check
+ * if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_create_folders (SandboxFileChooserDialog  *self,
                          gboolean                   create_folders,
                          GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1170,25 +1486,35 @@ sfcd_set_create_folders (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             _B (create_folders));
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
+/**
+ * sfcd_get_create_folders:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets whether the dialog will offer to create new folders; See
+ * sfcd_set_create_folders() for more information.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_get_create_folders() in the GTK+ API. Do remember to check
+ * if @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Return value: %TRUE if the Create Folder button should be displayed
+ *
+ * Since: 0.3
+ **/
 gboolean
 sfcd_get_create_folders (SandboxFileChooserDialog  *self,
-                         gboolean                  *result,
                          GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (result != NULL, FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  gboolean result = FALSE;
 
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), result);
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1205,35 +1531,48 @@ sfcd_get_create_folders (SandboxFileChooserDialog  *self,
   }
   else
   {
-    *result = gtk_file_chooser_get_create_folders (GTK_FILE_CHOOSER (self->priv->dialog));
+    result = gtk_file_chooser_get_create_folders (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetCreateFolders: dialog '%s' ('%s') has show-hidden '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            _B (*result));
-
-    succeeded = TRUE;
+            _B (result));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return result;
 }
 
-
-
-
-
-gboolean
+/**
+ * sfcd_set_current_name:
+ * @dialog: a #SandboxFileChooserDialog
+ * @name: (type filename): the filename to use, as a UTF-8 string
+ * @error: a placeholder for a #GError
+ * 
+ * Sets the current name in the dialog, as if entered by the user. Note that the
+ * name passed in here is a UTF-8 string rather than a filename. This function
+ * is meant for such uses as a suggested name in a "Save As..." dialog. You can
+ * pass "Untitled.odt" or a similarly suitable suggestion for the @name.
+ *
+ * If you want to preselect a particular existing file, you should use
+ * sfcd_set_filename() or sfcd_set_uri() instead.
+ * Please see the documentation for those functions for an example of using
+ * sfcd_set_current_name() as well.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_current_name() in the GTK+ API. Do remember to check
+ * if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_current_name (SandboxFileChooserDialog  *self,
                        const gchar               *name,
                        GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1267,24 +1606,62 @@ sfcd_set_current_name (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             name);
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_set_filename:
+ * @dialog: a #SandboxFileChooserDialog
+ * @filename: (type filename): the filename to set as current
+ * @error: a placeholder for a #GError
+ * 
+ * Sets @filename as the current filename for the dialog, by changing to
+ * the file's parent folder and actually selecting the file in list; all other
+ * files will be unselected.  If the @dialog is in
+ * %GTK_FILE_CHOOSER_ACTION_SAVE mode, the file's base name will also appear in
+ * the dialog's file name entry.
+ *
+ * Note that the file must exist, or nothing will be done except for the
+ * directory change.
+ *
+ * You should use this function only when implementing a <guimenuitem>File/Save
+ * As...</guimenuitem> dialog for which you already have a file name to which
+ * the user may save.  For example, when the user opens an existing file and
+ * then does <guimenuitem>Save As...</guimenuitem> on it to save a copy or
+ * a modified version.  If you don't have a file name already &mdash; for
+ * example, if the user just created a new file and is saving it for the first
+ * time, do not call this function. Instead, use something similar to this:
+ * |[
+ * if (document_is_new)
+ *   {
+ *     /&ast; the user just created a new document &ast;/
+ *     sfcd_set_current_name (chooser, "Untitled document");
+ *   }
+ * else
+ *   {
+ *     /&ast; the user edited an existing document &ast;/ 
+ *     sfcd_set_filename (chooser, existing_filename);
+ *   }
+ * ]|
+ *
+ * In the first case, the dialog will present the user with useful suggestions
+ * as to where to save his new file. In the second case, the file's existing
+ * location is already known, so the dialog will use it.
+ * 
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_filename() in the GTK+ API. Do remember to check
+ * if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_filename (SandboxFileChooserDialog  *self,
                    const gchar               *filename,
                    GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1318,24 +1695,38 @@ sfcd_set_filename (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             filename);
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_set_current_folder:
+ * @dialog: a #SandboxFileChooserDialog
+ * @filename: (type filename): the full path of the new current folder
+ * @error: a placeholder for a #GError
+ * 
+ * Sets the current folder for @dialog from a local filename. The user will be
+ * shown the full contents of the current folder, plus user interface elements
+ * for navigating to other folders.
+ *
+ * In general, you should not use this function. You should only cause the dialog
+ * to show a specific folder when it is appropriate to use sfcd_set_filename(),
+ * i.e. when you are doing a <guimenuitem>Save As...</guimenuitem> command
+ * and you already have a file saved somewhere.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_current_folder() in the GTK+ API. Do remember to check
+ * if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_current_folder (SandboxFileChooserDialog  *self,
                          const gchar               *filename,
                          GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1369,24 +1760,61 @@ sfcd_set_current_folder (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             filename);
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_set_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @uri: the URI to set as current
+ * @error: a placeholder for a #GError
+ * 
+ * Sets the file referred to by @uri as the current file for the @dialog,
+ * by changing to the URI's parent folder and actually selecting the URI in the
+ * list. If the @dialog is %GTK_FILE_CHOOSER_ACTION_SAVE mode, the URI's base
+ * name will also appear in the dialog's file name entry.
+ *
+ * Note that the URI must exist, or nothing will be done except for the 
+ * directory change.
+ *
+ * You should use this function only when implementing a <guimenuitem>File/Save
+ * As...</guimenuitem> dialog for which you already have a file name to which
+ * the user may save.  For example, when the user opens an existing file and
+ * then does <guimenuitem>Save As...</guimenuitem> on it to save a copy or a
+ * modified version.  If you don't have a file name already &mdash; for example,
+ * if the user just created a new file and is saving it for the first time, do
+ * not call this function. Instead, use something similar to this:
+ * |[
+ * if (document_is_new)
+ *   {
+ *     /&ast; the user just created a new document &ast;/
+ *     sfcd_set_current_name (chooser, "Untitled document");
+ *   }
+ * else
+ *   {
+ *     /&ast; the user edited an existing document &ast;/ 
+ *     sfcd_set_filename (chooser, existing_filename);
+ *   }
+ * ]|
+ *
+ * In the first case, the dialog will present the user with useful suggestions
+ * as to where to save his new file. In the second case, the file's existing
+ * location is already known, so the dialog will use it.
+ * 
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_uri() in the GTK+ API. Do remember to check
+ * if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_uri (SandboxFileChooserDialog  *self,
               const gchar               *uri,
               GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1420,24 +1848,38 @@ sfcd_set_uri (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             uri);
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_set_current_folder_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @uri: the URI for the new current folder
+ * @error: a placeholder for a #GError
+ * 
+ * Sets the current folder for @dialog from an URI. The user will be
+ * shown the full contents of the current folder, plus user interface elements
+ * for navigating to other folders.
+ *
+ * In general, you should not use this function. You should only cause the dialog
+ * to show a specific folder when it is appropriate to use sfcd_set_uri(),
+ * i.e. when you are doing a <guimenuitem>Save As...</guimenuitem> command
+ * and you already have a file saved somewhere.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_set_current_folder_uri() in the GTK+ API. Do remember to
+ * check if @error is set after running this method.
+ *
+ * Since: 0.3
+ **/
+void
 sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
                              const gchar               *uri,
                              GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1471,22 +1913,37 @@ sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
             uri);
-
-    succeeded = TRUE;
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
-
-  return succeeded;
 }
 
+/**
+ * sfcd_add_shortcut_folder:
+ * @dialog: a #SandboxFileChooserDialog
+ * @folder: (type filename): filename of the folder to add
+ * @error: a placeholder for a #GError
+ * 
+ * Adds a folder to be displayed with the shortcut folders in a dialog.
+ * Note that shortcut folders do not get saved, as they are provided by the
+ * application.  For example, you can use this to add a
+ * "/usr/share/mydrawprogram/Clipart" folder to the volume list.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_add_shortcut_folder() in the GTK+ API. Do remember to
+ * check if @error is set after running this method.
+ * 
+ * Return value: %TRUE if the folder could be added successfully, %FALSE
+ * otherwise.  In the latter case, the @error will be set as appropriate.
+ *
+ * Since: 0.3
+ **/
 gboolean
 sfcd_add_shortcut_folder (SandboxFileChooserDialog  *self,
                           const gchar               *folder,
                           GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), FALSE);
 
   gboolean succeeded = FALSE;
 
@@ -1540,13 +1997,31 @@ sfcd_add_shortcut_folder (SandboxFileChooserDialog  *self,
   return succeeded;
 }
 
+/**
+ * sfcd_remove_shortcut_folder:
+ * @dialog: a #SandboxFileChooserDialog
+ * @folder: (type filename): filename of the folder to remove
+ * @error: a placeholder for a #GError
+ * 
+ * Removes a folder from a dialog's list of shortcut folders.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_remove_shortcut_folder() in the GTK+ API. Do remember to
+ * check if @error is set after running this method.
+ * 
+ * Return value: %TRUE if the operation succeeds, %FALSE otherwise.  
+ * In the latter case, the @error will be set as appropriate.
+ *
+ * See also: sfcd_add_shortcut_folder()
+ *
+ * Since: 0.3
+ **/
 gboolean
 sfcd_remove_shortcut_folder (SandboxFileChooserDialog  *self,
                              const gchar               *folder,
                              GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), FALSE);
 
   gboolean succeeded = FALSE;
 
@@ -1600,17 +2075,35 @@ sfcd_remove_shortcut_folder (SandboxFileChooserDialog  *self,
   return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_list_shortcut_folders:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Queries the list of shortcut folders in the dialog, as set by
+ * sfcd_add_shortcut_folder().
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * sfcd_list_shortcut_folders() in the GTK+ API. Do remember to check if @error
+ * is set after running this method.
+ *
+ * Return value: (element-type filename) (transfer full): A list of
+ * folder filenames, or %NULL if there are no shortcut folders.  Free
+ * the returned list with g_slist_free(), and the filenames with
+ * g_free().
+ *
+ * See also: sfcd_add_shortcut_folder()
+ *
+ * Since: 0.3
+ **/
+GSList *
 sfcd_list_shortcut_folders (SandboxFileChooserDialog   *self,
-                            GSList                    **list,
                             GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
   g_mutex_lock (&self->priv->stateMutex);
+  GSList *list = NULL;
 
   if (sfcd_is_running (self))
   {
@@ -1625,29 +2118,46 @@ sfcd_list_shortcut_folders (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *list = gtk_file_chooser_list_shortcut_folders (GTK_FILE_CHOOSER (self->priv->dialog));
+    list = gtk_file_chooser_list_shortcut_folders (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.ListShortcutFolders: dialog '%s' ('%s')'s list of shortcuts contains %u elements.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            (*list == NULL? 0:g_slist_length (*list)));
-
-    succeeded = TRUE;
+            (list == NULL? 0:g_slist_length (list)));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return list;
 }
 
+/**
+ * sfcd_add_shortcut_folder_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @uri: URI of the folder to add
+ * @error: a placeholder for a #GError
+ * 
+ * Adds a folder URI to be displayed with the shortcut folders in a dialog.
+ * Note that shortcut folders do not get saved, as they are provided by the
+ * application.  For example, you can use this to add a
+ * "file:///usr/share/mydrawprogram/Clipart" folder to the volume list.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_add_shortcut_folder_uri() in the GTK+ API. Do remember to
+ * check if @error is set after running this method.
+ * 
+ * Return value: %TRUE if the folder could be added successfully, %FALSE
+ * otherwise.  In the latter case, the @error will be set as appropriate.
+ *
+ * Since: 0.3
+ **/
 gboolean
 sfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *self,
                               const gchar               *uri,
                               GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), FALSE);
 
   gboolean succeeded = FALSE;
 
@@ -1701,13 +2211,30 @@ sfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *self,
   return succeeded;
 }
 
+/**
+ * sfcd_remove_shortcut_folder_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @uri: URI of the folder to remove
+ * @error: a placeholder for a #GError
+ * 
+ * Removes a folder URI from a dialog's list of shortcut folders.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_remove_shortcut_folder_uri() in the GTK+ API. Do remember to
+ * check if @error is set after running this method.
+ * 
+ * Return value: %TRUE if the operation succeeds, %FALSE otherwise.  
+ * In the latter case, the @error will be set as appropriate.
+ *
+ * See also: sfcd_add_shortcut_folder_uri()
+ * Since: 0.3
+ **/
 gboolean
 sfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog  *self,
                                  const gchar               *uri,
                                  GError                   **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), FALSE);
 
   gboolean succeeded = FALSE;
 
@@ -1761,17 +2288,34 @@ sfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog  *self,
   return succeeded;
 }
 
-gboolean
+/**
+ * sfcd_list_shortcut_folder_uris:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Queries the list of shortcut folders in the dialog, as set by
+ * sfcd_add_shortcut_folder_uri().
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * sfcd_list_shortcut_folder_uris() in the GTK+ API. Do remember to check if
+ * @error is set after running this method.
+ *
+ * Return value: (element-type utf8) (transfer full): A list of folder
+ * URIs, or %NULL if there are no shortcut folders.  Free the returned
+ * list with g_slist_free(), and the URIs with g_free().
+ *
+ * See also: sfcd_add_shortcut_folder_uri()
+ *
+ * Since: 0.3
+ **/
+GSList *
 sfcd_list_shortcut_folder_uris (SandboxFileChooserDialog   *self,
-                                GSList                    **list,
                                 GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
   g_mutex_lock (&self->priv->stateMutex);
+  GSList *list = NULL;
 
   if (sfcd_is_running (self))
   {
@@ -1786,53 +2330,57 @@ sfcd_list_shortcut_folder_uris (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *list = gtk_file_chooser_list_shortcut_folder_uris (GTK_FILE_CHOOSER (self->priv->dialog));
+    list = gtk_file_chooser_list_shortcut_folder_uris (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.ListShortcutFoldersUri: dialog '%s' ('%s')'s list of shortcuts contains %u elements.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            (*list == NULL? 0:g_slist_length (*list)));
-
-    succeeded = TRUE;
+            (list == NULL? 0:g_slist_length (list)));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return list;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-gboolean
+/**
+ * sfcd_get_current_name:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets the current name in the @dialog, as entered by the user in the
+ * text entry for "Name".
+ *
+ * This is meant to be used in save dialogs, to get the currently typed filename
+ * when the file itself does not exist yet.  For example, an application that
+ * adds a custom extra widget to the dialog for "file format" may want to
+ * change the extension of the typed filename based on the chosen format, say,
+ * from ".jpg" to ".png".
+ *
+ * FIXME: this cannot be provided and advertised in the same way in SandboxUtils.
+ * An API will be provided to complete/modify filenames for file extension to 
+ * format matching, but apps can no longer choose arbitrary names.
+ *
+ * This method belongs to the %SFCD_DATA_RETRIEVAL state. It is equivalent to
+ * gtk_file_chooser_get_current_name() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Returns: The raw text from the dialog's "Name" entry. Free this with
+ * g_free(). Note that this string is not a full pathname or URI; it is
+ * whatever the contents of the entry are.  Note also that this string is in
+ * UTF-8 encoding, which is not necessarily the system's encoding for filenames.
+ *
+ * Since: 0.4
+ **/
+gchar *
 sfcd_get_current_name (SandboxFileChooserDialog   *self,
-                       gchar                     **name,
                        GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
-  gboolean succeeded = FALSE;
+  gchar *name = NULL;
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1849,31 +2397,51 @@ sfcd_get_current_name (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *name = gtk_file_chooser_get_current_name (GTK_FILE_CHOOSER (self->priv->dialog));
+    name = gtk_file_chooser_get_current_name (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetCurrentName: dialog '%s' ('%s')'s typed name currently is '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            *name);
-
-    succeeded = TRUE;
+            name);
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return name;
 }
 
-gboolean
+/**
+ * sfcd_get_filename:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets the filename for the currently selected file in
+ * the dialog. The filename is returned as an absolute path. If
+ * multiple files are selected, one of the filenames will be returned at
+ * random.
+ *
+ * If the dialog is in folder mode, this function returns the selected
+ * folder.
+ *
+ * This method belongs to the %SFCD_DATA_RETRIEVAL state. It is equivalent to
+ * gtk_file_chooser_get_filename() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ * 
+ * Return value: (type filename): The currently selected filename, or %NULL
+ * if no file is selected, or the selected file can't  be represented with a
+ * local filename. Free with g_free().
+ *
+ * Since: 0.4
+ **/
+gchar *
 sfcd_get_filename (SandboxFileChooserDialog   *self,
-                   gchar                     **name,
                    GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
-  gboolean succeeded = FALSE;
+  gchar *name = NULL;
 
   g_mutex_lock (&self->priv->stateMutex);
 
@@ -1890,33 +2458,51 @@ sfcd_get_filename (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *name = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (self->priv->dialog));
+    name = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetFilename: dialog '%s' ('%s')'s current file name is '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            *name);
-
-    succeeded = TRUE;
+            name);
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return name;
 }
 
-gboolean
+/**
+ * sfcd_get_filenames:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Lists all the selected files and subfolders in the current folder of
+ * @dialog. The returned names are full absolute paths. If files in the current
+ * folder cannot be represented as local filenames they will be ignored. (See
+ * sfcd_get_uris())
+ *
+ * This method belongs to the %SFCD_DATA_RETRIEVAL state. It is equivalent to
+ * gtk_file_chooser_get_filenames() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Return value: (element-type filename) (transfer full): a #GSList
+ *    containing the filenames of all selected files and subfolders in
+ *    the current folder. Free the returned list with g_slist_free(),
+ *    and the filenames with g_free().
+ *
+ * Since: 0.4
+ **/
+GSList *
 sfcd_get_filenames (SandboxFileChooserDialog   *self,
-                    GSList                    **list,
                     GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
   g_mutex_lock (&self->priv->stateMutex);
+
+  GSList *list = NULL;
 
   if (sfcd_get_state (self) != SFCD_DATA_RETRIEVAL)
   {
@@ -1931,33 +2517,59 @@ sfcd_get_filenames (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *list = gtk_file_chooser_get_filenames (GTK_FILE_CHOOSER (self->priv->dialog));
+    list = gtk_file_chooser_get_filenames (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetFilenames: dialog '%s' ('%s')'s list of current file names contains %u elements.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            (*list == NULL? 0:g_slist_length (*list)));
-
-    succeeded = TRUE;
+            (list == NULL? 0:g_slist_length (list)));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return list;
 }
 
-gboolean
+/**
+ * sfcd_get_current_folder:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets the current folder of @dialog as a local filename.
+ * See sfcd_set_current_folder().
+ *
+ * Note that this is the folder that the dialog is currently displaying
+ * (e.g. "/home/username/Documents"), which is <emphasis>not the same</emphasis>
+ * as the currently-selected folder if the dialog is in
+ * %GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER mode
+ * (e.g. "/home/username/Documents/selected-folder/".  To get the
+ * currently-selected folder in that mode, use sfcd_get_uri() as the
+ * usual way to get the selection.
+ *
+ * This method belongs to the %SFCD_DATA_RETRIEVAL state. It is equivalent to
+ * gtk_file_chooser_get_current_folder() in the GTK+ API. Do remember to check
+ * if @error is set after running this method. If set, the return value is
+ * undefined.
+ * 
+ * Return value: (type filename): the full path of the current folder,
+ * or %NULL if the current path cannot be represented as a local
+ * filename.  Free with g_free().  This function will also return
+ * %NULL if the dialog was unable to load the last folder that
+ * was requested from it; for example, as would be for calling
+ * sfcd_set_current_folder() on a nonexistent folder.
+ *
+ * Since: 0.4
+ **/
+gchar *
 sfcd_get_current_folder (SandboxFileChooserDialog   *self,
-                         gchar                     **folder,
                          GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
   g_mutex_lock (&self->priv->stateMutex);
+  
+  gchar *folder = NULL;
 
   if (sfcd_is_running (self))
   {
@@ -1972,33 +2584,50 @@ sfcd_get_current_folder (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *folder = gtk_file_chooser_get_current_folder (GTK_FILE_CHOOSER (self->priv->dialog));
+    folder = gtk_file_chooser_get_current_folder (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetCurrentFolder: dialog '%s' ('%s')'s current folder is '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            *folder);
-
-    succeeded = TRUE;
+            folder);
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return folder;
 }
 
-gboolean
+/**
+ * sfcd_get_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ *
+ * Gets the URI for the currently selected file in the dialog. If multiple files
+ * are selected, one of the filenames will be returned at random.
+ * 
+ * If the dialog is in folder mode, this function returns the selected folder.
+ *
+ * This method belongs to the %SFCD_DATA_RETRIEVAL state. It is equivalent to
+ * gtk_file_chooser_get_uri() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ * 
+ * Return value: The currently selected URI, or %NULL
+ *  if no file is selected. If sfcd_set_local_only() is set to %TRUE
+ * (the default) a local URI will be returned for any FUSE locations.
+ * Free with g_free().
+ *
+ * Since: 0.4
+ **/
+gchar *
 sfcd_get_uri (SandboxFileChooserDialog   *self,
-              gchar                     **uri,
               GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
   g_mutex_lock (&self->priv->stateMutex);
+  gchar *uri = NULL;
 
   if (sfcd_get_state (self) != SFCD_DATA_RETRIEVAL)
   {
@@ -2013,33 +2642,48 @@ sfcd_get_uri (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *uri = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (self->priv->dialog));
+    uri = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetUri: dialog '%s' ('%s')'s current file uri is '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            *uri);
-
-    succeeded = TRUE;
+            uri);
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return uri;
 }
 
-gboolean
+/**
+ * sfcd_get_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Lists all the selected files and subfolders in the current folder of
+ * @dialog. The returned names are full absolute URIs.
+ *
+ * This method belongs to the %SFCD_DATA_RETRIEVAL state. It is equivalent to
+ * gtk_file_chooser_get_uris() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Return value: (element-type utf8) (transfer full): a #GSList containing the URIs of all selected
+ *   files and subfolders in the current folder. Free the returned list
+ *   with g_slist_free(), and the filenames with g_free().
+ *
+ * Since: 0.3
+ **/
+GSList *
 sfcd_get_uris (SandboxFileChooserDialog   *self,
-               GSList                    **list,
                GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
   g_mutex_lock (&self->priv->stateMutex);
+  
+  GSList *list = NULL;
 
   if (sfcd_get_state (self) != SFCD_DATA_RETRIEVAL)
   {
@@ -2054,33 +2698,58 @@ sfcd_get_uris (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *list = gtk_file_chooser_get_uris (GTK_FILE_CHOOSER (self->priv->dialog));
+    list = gtk_file_chooser_get_uris (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetUris: dialog '%s' ('%s')'s list of current file uris contains %u elements.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            (*list == NULL? 0:g_slist_length (*list)));
-
-    succeeded = TRUE;
+            (list == NULL? 0:g_slist_length (list)));
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return list;
 }
 
-gboolean
+/**
+ * sfcd_gett_current_folder_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ *
+ * Gets the current folder of @dialog as an URI.
+ * See sfcd_set_current_folder_uri().
+ *
+ * Note that this is the folder that the dialog is currently displaying
+ * (e.g. "file:///home/username/Documents"), which is <emphasis>not the same</emphasis>
+ * as the currently-selected folder if the dialog is in
+ * %GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER mode
+ * (e.g. "file:///home/username/Documents/selected-folder/".  To get the
+ * currently-selected folder in that mode, use sfcd_get_uri() as the
+ * usual way to get the selection.
+ *
+ * This method belongs to the %SFCD_DATA_RETRIEVAL state. It is equivalent to
+ * gtk_file_chooser_get_current_folder_uri() in the GTK+ API. Do remember to
+ * check if @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Return value: the URI for the current folder. Free with g_free().  This
+ * function will also return %NULL if the dialog was unable to load the
+ * last folder that was requested from it; for example, as would be for calling
+ * sfcd_set_current_folder_uri() on a nonexistent folder.
+ * 
+ *
+ * Since: 0.3
+ **/
+gchar *
 sfcd_get_current_folder_uri (SandboxFileChooserDialog   *self,
-                             gchar                     **uri,
                              GError                    **error)
 {
-  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
-  g_return_val_if_fail (error != NULL, FALSE);
-
-  gboolean succeeded = FALSE;
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
 
   g_mutex_lock (&self->priv->stateMutex);
+  
+  gchar *uri = NULL;
 
   if (sfcd_is_running (self))
   {
@@ -2095,18 +2764,16 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *self,
   }
   else
   {
-    *uri = gtk_file_chooser_get_current_folder_uri (GTK_FILE_CHOOSER (self->priv->dialog));
+    uri = gtk_file_chooser_get_current_folder_uri (GTK_FILE_CHOOSER (self->priv->dialog));
 
     syslog (LOG_DEBUG,
             "SandboxFileChooserDialog.GetCurrentFolderUri: dialog '%s' ('%s')'s current folder uri is '%s'.\n",
             self->id,
             gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
-            *uri);
-
-    succeeded = TRUE;
+            uri);
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
 
-  return succeeded;
+  return uri;
 }

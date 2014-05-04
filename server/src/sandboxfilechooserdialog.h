@@ -63,7 +63,6 @@ gchar *SfcdStatePrintable[5] = {"Wrong State (an error occurred)",
                                 "Running",
                                 "Data Retrieval",
                                 NULL};
-                                 
 
 /**
  * SfcdErrorCode:
@@ -125,211 +124,183 @@ GType sfcd_get_type (void);
 
 /* GENERIC METHODS */
 SandboxFileChooserDialog *
-sfcd_new (GtkWidget *dialog);
+sfcd_new                  (GtkWidget *gtkdialog); //FIXME
 
 void
-sfcd_destroy (SandboxFileChooserDialog *self);
+sfcd_destroy              (SandboxFileChooserDialog *dialog);
 
 SfcdState
-sfcd_get_state (SandboxFileChooserDialog *self);
+sfcd_get_state            (SandboxFileChooserDialog *dialog);
 
 const gchar *
-sfcd_get_state_printable (SandboxFileChooserDialog *self);
+sfcd_get_state_printable  (SandboxFileChooserDialog *dialog);
 
 const gchar *
-sfcd_get_dialog_title (SandboxFileChooserDialog *self);
+sfcd_get_dialog_title     (SandboxFileChooserDialog *dialog);
 
 gboolean
-sfcd_is_running (SandboxFileChooserDialog *self);
+sfcd_is_running           (SandboxFileChooserDialog *dialog);
 
 
 /* RUNNING METHODS */
-gboolean
-sfcd_run (SandboxFileChooserDialog  *self,
-          GError                   **error);
+void
+sfcd_run                           (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
 
-gboolean
-sfcd_present (SandboxFileChooserDialog  *self,
-              GError                   **error);
+void
+sfcd_present                       (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
 
-gboolean
-sfcd_cancel_run (SandboxFileChooserDialog  *self,
-                 GError                   **error);
+void
+sfcd_cancel_run                    (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
 
 
 /* CONFIGURATION / MANAGEMENT METHODS  -- USABLE BEFORE RUN */
-// FIXME find out how to pass the actual enum over GDBus
-gboolean
-sfcd_set_action (SandboxFileChooserDialog  *self,
-                 gint32                     action,
-                 GError                   **error);
+void
+sfcd_set_action                    (SandboxFileChooserDialog  *dialog,
+                                    GtkFileChooserAction       action,
+                                    GError                   **error);
 
-// FIXME find out how to pass the actual enum over GDBus
-gboolean
-sfcd_get_action (SandboxFileChooserDialog  *self,
-                 gint32                    *action,
-                 GError                   **error);
+GtkFileChooserAction
+sfcd_get_action                    (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
 
-gboolean
-sfcd_set_local_only (SandboxFileChooserDialog  *self,
-                     gboolean                   local_only,
-                     GError                   **error);
+void
+sfcd_set_local_only                (SandboxFileChooserDialog  *dialog,
+                                    gboolean                   local_only,
+                                    GError                   **error);
 
 gboolean
-sfcd_get_local_only (SandboxFileChooserDialog  *self,
-                     gboolean                  *local_only,
-                     GError                   **error);
+sfcd_get_local_only                (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
+
+void
+sfcd_set_select_multiple           (SandboxFileChooserDialog  *dialog,
+                                    gboolean                   select_multiple,
+                                    GError                   **error);
 
 gboolean
-sfcd_set_select_multiple (SandboxFileChooserDialog  *self,
-                          gboolean                   select_multiple,
-                          GError                   **error);
+sfcd_get_select_multiple           (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
+
+void
+sfcd_set_show_hidden               (SandboxFileChooserDialog  *dialog,
+                                    gboolean                   show_hidden,
+                                    GError                   **error);
 
 gboolean
-sfcd_get_select_multiple (SandboxFileChooserDialog  *self,
-                          gboolean                  *select_multiple,
-                          GError                   **error);
+sfcd_get_show_hidden               (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
 
-gboolean
-sfcd_set_show_hidden (SandboxFileChooserDialog  *self,
-                      gboolean                   show_hidden,
-                      GError                   **error);
-
-gboolean
-sfcd_get_show_hidden (SandboxFileChooserDialog  *self,
-                      gboolean                  *show_hidden,
-                      GError                   **error);
-
-gboolean
-sfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
+void
+sfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *dialog,
                                     gboolean                   do_overwrite_confirmation,
                                     GError                   **error);
 
 gboolean
-sfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *self,
-                                    gboolean                  *do_overwrite_confirmation,
+sfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
+
+void
+sfcd_set_create_folders            (SandboxFileChooserDialog  *dialog,
+                                    gboolean                   create_folders,
                                     GError                   **error);
 
 gboolean
-sfcd_set_create_folders (SandboxFileChooserDialog  *self,
-                         gboolean                   create_folders,
-                         GError                   **error);
+sfcd_get_create_folders            (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
+
+void
+sfcd_set_current_name              (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *name,
+                                    GError                   **error);
+
+void
+sfcd_set_filename                  (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *filename,
+                                    GError                   **error);
+
+void
+sfcd_set_current_folder            (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *filename,
+                                    GError                   **error);
+
+void
+sfcd_set_uri                       (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *uri,
+                                    GError                   **error);
+
+void
+sfcd_set_current_folder_uri        (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *uri,
+                                    GError                   **error);
 
 gboolean
-sfcd_get_create_folders (SandboxFileChooserDialog  *self,
-                         gboolean                  *create_folders,
-                         GError                   **error);
+sfcd_add_shortcut_folder           (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *folder,
+                                    GError                   **error);
 
 gboolean
-sfcd_set_current_name (SandboxFileChooserDialog  *self,
-                       const gchar               *name,
-                       GError                   **error);
+sfcd_remove_shortcut_folder        (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *folder,
+                                    GError                   **error);
+
+GSList *
+sfcd_list_shortcut_folders         (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
 
 gboolean
-sfcd_set_filename (SandboxFileChooserDialog  *self,
-                   const gchar               *filename,
-                   GError                   **error);
+sfcd_add_shortcut_folder_uri       (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *uri,
+                                    GError                   **error);
 
 gboolean
-sfcd_set_current_folder (SandboxFileChooserDialog  *self,
-                         const gchar               *filename,
-                         GError                   **error);
+sfcd_remove_shortcut_folder_uri    (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *uri,
+                                    GError                   **error);
 
-gboolean
-sfcd_set_uri (SandboxFileChooserDialog  *self,
-              const gchar               *uri,
-              GError                   **error);
-
-gboolean
-sfcd_set_current_folder_uri (SandboxFileChooserDialog  *self,
-                             const gchar               *uri,
-                             GError                   **error);
-
-gboolean
-sfcd_add_shortcut_folder (SandboxFileChooserDialog  *self,
-                          const gchar               *folder,
-                          GError                   **error);
-
-gboolean
-sfcd_remove_shortcut_folder (SandboxFileChooserDialog  *self,
-                             const gchar               *folder,
-                             GError                   **error);
-
-//A list of folder filenames, or NULL if there are no shortcut folders. Free the returned list with g_slist_free(), and the filenames with g_free(). Legitimate NULL.
-gboolean
-sfcd_list_shortcut_folders (SandboxFileChooserDialog   *self,
-                            GSList                    **list,
-                            GError                    **error);
-
-gboolean
-sfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *self,
-                              const gchar               *uri,
-                              GError                   **error);
-
-gboolean
-sfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog  *self,
-                                 const gchar               *uri,
-                                 GError                   **error);
-
-//A list of folder filenames, or NULL if there are no shortcut folders. Free the returned list with g_slist_free(), and the filenames with g_free(). Legitimate NULL.
-gboolean
-sfcd_list_shortcut_folder_uris (SandboxFileChooserDialog   *self,
-                                GSList                    **list,
-                                GError                    **error);
+GSList *
+sfcd_list_shortcut_folder_uris     (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
 
 
 /* DATA RERIEVAL METHODS */
-//Free this with g_free(). 
-gboolean
-sfcd_get_current_name (SandboxFileChooserDialog   *self,
-                       gchar                     **name,
-                       GError                    **error);
+gchar *
+sfcd_get_current_name       (SandboxFileChooserDialog   *dialog,
+                             GError                    **error);
 
-//Free this with g_free(). Legitimate "", not NULL.
-gboolean
-sfcd_get_current_name (SandboxFileChooserDialog   *self,
-                       gchar                     **name,
-                       GError                    **error);
+gchar *
+sfcd_get_current_name       (SandboxFileChooserDialog   *dialog,
+                             GError                    **error);
 
-//Free this with g_free(). Legitimate NULL.
-gboolean
-sfcd_get_filename (SandboxFileChooserDialog   *self,
-                   gchar                     **name,
-                   GError                    **error);
+gchar *
+sfcd_get_filename           (SandboxFileChooserDialog   *dialog,
+                             GError                    **error);
 
-//A list of folder filenames, or NULL if there are no shortcut folders. Free the returned list with g_slist_free(), and the filenames with g_free(). Legitimate NULL.
-gboolean
-sfcd_get_filenames (SandboxFileChooserDialog   *self,
-                    GSList                    **list,
-                    GError                    **error);
+GSList *
+sfcd_get_filenames          (SandboxFileChooserDialog   *dialog,
+                             GError                    **error);
 
-//Free this with g_free(). Legitimate "", not NULL.
-gboolean
-sfcd_get_current_folder (SandboxFileChooserDialog   *self,
-                         gchar                     **folder,
-                         GError                    **error);
+gchar *
+sfcd_get_current_folder     (SandboxFileChooserDialog   *dialog,
+                             GError                    **error);
 
-//Free this with g_free(). Legitimate NULL.
-gboolean
-sfcd_get_uri (SandboxFileChooserDialog   *self,
-              gchar                     **uri,
-              GError                    **error);
+gchar *
+sfcd_get_uri                (SandboxFileChooserDialog   *dialog,
+                             GError                    **error);
 
-//A list of folder filenames, or NULL if there are no shortcut folders. Free the returned list with g_slist_free(), and the filenames with g_free(). Legitimate NULL.
-gboolean
-sfcd_get_uris (SandboxFileChooserDialog   *self,
-               GSList                    **list,
-               GError                    **error);
+GSList *
+sfcd_get_uris               (SandboxFileChooserDialog   *dialog,
+                             GError                    **error);
 
-//Free this with g_free(). Legitimate "", not NULL.
-gboolean
-sfcd_get_current_folder_uri (SandboxFileChooserDialog   *self,
-                             gchar                     **uri,
+gchar *
+sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
                              GError                    **error);
 
 
 
-/* 
+/**
  * Proposed API changes
  * _____________________________________________________________________________
  * API CHANGE: On-the-fly filename transformation widget
@@ -410,7 +381,7 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *self,
  * filename from the client's callback, with a scheme under the control of the
  * server (avoids arbitrary names).
  * _____________________________________________________________________________
- */
+**/
 
 
 // TODO: propose a stricter API where state switches need to be made via a Reset
@@ -425,7 +396,8 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *self,
 //void	file-activated	Run Last                            // Not exported, "run-finished" instead
 //void	selection-changed	Run Last                          // Not exported, forbidden info
 //void	update-preview	Run Last                            // TODO new architecture for widget preview
-
+//    GtkDialog: RESPONSE
+//    GtkWidget: ??? (TODO make list)
 
 
 G_END_DECLS
