@@ -146,6 +146,8 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
                     G_TYPE_BOOLEAN);
 
   /* Hook finalization functions */
+  klass->dispose = sfcd_dispose;
+  klass->finalize = sfcd_finalize; 
   g_object_class->dispose = sfcd_dispose; /* instance destructor, reverse of init */
   g_object_class->finalize = sfcd_finalize; /* class finalization, reverse of class init */
 }
