@@ -1,3 +1,24 @@
+
+# initialize variables for unconditional += appending
+BUILT_SOURCES =
+BUILT_EXTRA_DIST =
+CLEANFILES = *.log *.trs
+DISTCLEANFILES =
+MAINTAINERCLEANFILES =
+EXTRA_DIST =
+TEST_PROGS =
+
+noinst_LTLIBRARIES =
+noinst_PROGRAMS =
+noinst_SCRIPTS =
+noinst_DATA =
+
+check_LTLIBRARIES =
+check_PROGRAMS =
+check_SCRIPTS =
+check_DATA =
+
+
 AM_CPPFLAGS = -Wall $(DBUS_CFLAGS) $(GTK_CFLAGS) $(SYSTEMD_CFLAGS)
 AM_LDFLAGS = $(DBUS_LIBS) $(GTK_LIBS) $(SYSTEMD_LIBS)
 bin_PROGRAMS = sandboxutilsd
@@ -18,11 +39,6 @@ sandboxutilsd_SOURCES = sandboxutilsd.c \
 		sandboxfilechooserdialogdbuswrapper.c \
 		sandboxfilechooserdialogdbusobject.c \
 		sandboxfilechooserdialogdbusobject.h
-
-EXTRA_DIST=
-BUILT_SOURCES = 
-CLEANFILES =
-
 
 
 ## GDBus interface generation
