@@ -1,5 +1,8 @@
 2014-05-04  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
+    * server/sandboxfilechooserdialog.*: temporarily removed in favour of lib/.
+    Tree is currently broken.
+
     * lib/localfilechooserdialog.*,lib/sandboxfilechooserdialog.*: now SFCD is a
     virtual class with a first implementation. LFCD implements the API by
     spawning a local GtkFileChooserDialog, which is the class used by the server

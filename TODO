@@ -17,7 +17,8 @@
 
 # And giving it love
 - Share DBus mgt between APIs
-- Other classes!
+- Other GTK+ classes!
+- glib-mkenums
 - XDG folders work
 - All exposed FS can be made read-write, kept consist
 - Extend to use/cases, discuss with DE on integration
