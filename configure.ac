@@ -17,8 +17,8 @@ m4_define(glib_configure_ac)
 #
 
 m4_define([su_major_version], [0])
-m4_define([su_minor_version], [4])
-m4_define([su_micro_version], [9])
+m4_define([su_minor_version], [5])
+m4_define([su_micro_version], [0])
 m4_define([su_interface_age], [0])
 m4_define([su_binary_age], [0])
 
@@ -407,6 +407,7 @@ AC_SUBST(sandboxutilsd_INCLUDES)
 # lookup GLib for more examples of things to include
 AC_CONFIG_FILES([
 sandboxutils.pc
+lib/sandboxutilscommon.h
 Makefile
 lib/Makefile
 server/Makefile
