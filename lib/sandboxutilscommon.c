@@ -19,3 +19,14 @@ g_error_get_message (GError *err)
     return "(no error)";
 }
 
+const int
+min (int a, int b)
+{
+  return a<b? a:b;
+}
+
+const int
+max (int a, int b)
+{
+  return a>b? a:b;
+}
