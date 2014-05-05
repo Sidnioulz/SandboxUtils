@@ -115,6 +115,7 @@ struct _SandboxFileChooserDialogClass
   GObjectClass parent_class;
   
   /* Pointers to virtual methods implemented by local and remote dialogs */
+  //TODO get/set_dialog_title
   void                 (*finalize)                      (GObject *);
   void                 (*dispose)                       (GObject *);
   void                 (*destroy)                       (SandboxFileChooserDialog *);
