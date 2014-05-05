@@ -1,3 +1,25 @@
+2014-05-05  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * configure.ac: Version 0.5.0
+
+    * server/*: Now using the new toolchain and reusing lib/*.c files to build.
+    Builds, links and runs (however many invalid cast errors when running).
+
+    * server/sandboxfilechooserdbuswrapper.c,lib/localfilechooserdialog.*: 
+    Ported DBus wrapper to use lfcd_new_variant(), a new ctor for when a valist
+    is not available.
+
+    * lib/*filechooserdialog.c: Better constructor documentation.
+
+    * autogen.sh,configure.ac,Makefile.am,*: Unified build toolchain.
+
+    * sandboxutils.pc.in: pkg-config pc file.
+
+    * lib/sandboxutilscommon.h.in: Now generated via configure.ac to avoid
+    managing versioning in multiple places myself.
+
+    * docs/*: Pointless agitation in Makefile.am, not meant to build at all yet.
+
 2014-05-04  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
     * server/sandboxfilechooserdialog.*: temporarily removed in favour of lib/.
