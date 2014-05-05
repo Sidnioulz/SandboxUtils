@@ -43,9 +43,17 @@ sandboxutilsd_CPPFLAGS = -DG_LOG_DOMAIN=\"sandboxutilsd\" $(AM_CPPFLAGS)
 
 sandboxutilsd_SOURCES = sandboxutilsd.c \
 		sandboxutilsclientmanager.c \
-		sandboxfilechooserdialogdbuswrapper.c \
-		$(top_srcdir)/lib/sandboxutilsmarshals.c \
-		$(top_srcdir)/lib/sandboxfilechooserdialog.c \
-		$(top_srcdir)/lib/sandboxfilechooserdialogdbusobject.c \
-		$(top_srcdir)/lib/sandboxfilechooserdialogdbusobject.h
+		sandboxfilechooserdialogdbuswrapper.c
+
+sandboxutilsd_LDADD = $(top_srcdir)/lib/libsandboxutils.la
+sandboxutilsd_DEPENDENCIES = $(top_srcdir)/lib/libsandboxutils.la
+
+#sandboxutilsd_SOURCES = sandboxutilsd.c \
+#		sandboxutilsclientmanager.c \
+#		sandboxfilechooserdialogdbuswrapper.c \
+#		$(top_srcdir)/lib/sandboxutilscommon.c \
+#		$(top_srcdir)/lib/sandboxutilsmarshals.c \
+#		$(top_srcdir)/lib/sandboxfilechooserdialog.c \
+#		$(top_srcdir)/lib/sandboxfilechooserdialogdbusobject.c \
+#		$(top_srcdir)/lib/sandboxfilechooserdialogdbusobject.h
 
