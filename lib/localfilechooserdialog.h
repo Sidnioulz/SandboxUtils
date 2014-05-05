@@ -65,6 +65,13 @@ lfcd_new_valist (const gchar          *title,
                  va_list               varargs);
 
 SandboxFileChooserDialog *
+lfcd_new_variant (const gchar          *title,
+                  const gchar          *parentWinId,
+                  GtkWindow            *parent,
+                  GtkFileChooserAction  action,
+                  GVariant             *button_list);
+
+SandboxFileChooserDialog *
 lfcd_new (const gchar          *title,
           GtkWindow            *parent,
           GtkFileChooserAction  action,
