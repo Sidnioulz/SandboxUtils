@@ -350,7 +350,7 @@ lfcd_new (const gchar *title,
 /**
  * lfcd_new_with_remote_parent:
  * @title: (allow-none): Title of the dialog, or %NULL
- * @parentWinid: (allow-none): Id of a transient parent window owned by another process 
+ * @parentWinId: (allow-none): Window Identifier of a remote transient parent, or %NULL
  * @action: Open or save mode for the dialog (see #GtkFileChooserAction)
  * @first_button_text: (allow-none): stock ID or text to go in the first button, or %NULL
  * @...: response ID for the first button, then additional (button, id) pairs, ending with %NULL
