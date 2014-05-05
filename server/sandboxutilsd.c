@@ -61,6 +61,9 @@ main (int argc, char *argv[])
   mtrace ();
 #endif
 
+  // Initialise sandboxutils settings
+  // TODO // sandboxutils_init (&argc, &argv);
+
   // Initialise GTK for later
   gtk_init (&argc, &argv);
 
