@@ -89,6 +89,7 @@
  **/
 
 //TODO copy extra sections from gtkfilechooser such as gtkfilechooserdialog-setting-up
+//FIXME where are the properties? the ctor must handle and dispatch them
 
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -151,19 +152,21 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
 
 /**
  * sfcd_new:
- * @dialog: a #GtkFileChooserDialog
- * 
- * Creates a new instance of #SandboxFileChooserDialog and associates @dialog
- * with it. Fails if @dialog is %NULL. Free with sfcd_destroy(). FIXME
+ * @title: (allow-none): Title of the dialog, or %NULL
+ * @parent: (allow-none): Transient parent of the dialog, or %NULL
+ * @action: Open or save mode for the dialog (see #GtkFileChooserAction)
+ * @first_button_text: (allow-none): stock ID or text to go in the first button, or %NULL
+ * @...: response ID for the first button, then additional (button, id) pairs, ending with %NULL
  *
+ * Creates a new #SandboxFileChooserDialog. Depending on the settings of Sandbox
+ * Utils (see sandboxutils_init()), this may either spawn a locally-owned
+ * GTK+ dialog or a handle to a remotely-owned dialog controlled over D-Bus.
+ * 
  * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
  *
- * Since: 0.3
+ * Return value: a new #SansboxFileChooserDialog
  *
- * Returns: the new dialog as a #SandboxFileChooserDialog
- *
- FIXME change the API to make it not use a GtkWidget
- FIXME where are the properties? the ctor must handle and dispatch them
+ * Since: 0.5
  **/
 SandboxFileChooserDialog *
 sfcd_new (const gchar *title,

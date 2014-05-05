@@ -28,12 +28,18 @@
  * @See_also: #SandboxFileChooserDialog
  *
  * #LocalFileChooserDialog is a private class, that implements the
- * #SandboxFileChooserDialog API. You should exclusively use 
- * #SandboxFileChooserDialog in your client code, and use "--local" when calling
- * your client application so that #SandboxFileChooserDialog is initialised to
- * using local dialogs. Bear in mind local dialogs do not pass through the
- * sandboxing container used for your application, so it is very unlikely that
- * this is the class you want to use.
+ * #SandboxFileChooserDialog API. This class exposes multiple constructors,
+ * which are convenience functions for people to implement servers or wrappers 
+ * (where one may store the button list of the dialog in a GVariant or va_list).
+ *
+ * In a normal application, you almost always want to use sfcd_new() which will
+ * detect whether to use local GTK+ dialogs or remote dialogs over D-Bus. Users
+ * and application launchers can pass a parameter to your application which will
+ * cause sandboxutils_init() to detect what backend to use.
+ *
+ * Bear in mind local dialogs do not pass through the sandboxing container that
+ * your application may be contained in, so using #LocalFileChooserDialog 
+ * directly may not be a good idea.
  *
  * Since: 0.5
  **/
@@ -166,23 +172,35 @@ gtk_file_chooser_dialog_new_valist (const gchar          *title,
 }
 
 /**
- * lfcd_new_with_remote_parent:
- * @dialog: a #GtkFileChooserDialog 
- 
- 
- (allow-none)
+ * lfcd_new_valist:
+ * @title: (allow-none): Title of the dialog, or %NULL
+ * @parentWinId: (allow-none): Window Identifier of a remote transient parent, or %NULL
+ * @parent: (allow-none): Transient parent of the dialog, or %NULL
+ * @action: Open or save mode for the dialog (see #GtkFileChooserAction)
+ * @first_button_text: (allow-none): stock ID or text to go in the first button, or %NULL
+ * @varargs: response ID for the first button, then additional (button, id) pairs, ending with %NULL
+ *
+ * Creates a new #LocalFileChooserDialog. You usually should not use this
+ * function, unless implementing a server or a wrapper for #LocalFileChooserDialog.
+ * In a normal application, you almost always want to use sfcd_new().
  * 
- * Creates a new instance of #SandboxFileChooserDialog and associates @dialog
- * with it. Fails if @dialog is %NULL. Free with sfcd_destroy(). FIXME
+ * @parentWinId refers to a unique window identifier that a privileged server may
+ * pass onto the compositor of your session, so that the compositor treats the
+ * #LocalFileChooserDialog created by this function as a transient child of the
+ * window identified by @parentWinId. Bear in mind that the compositor needs to
+ * recognise your application as a legitimate privileged server for it to attach
+ * this dialog to other processes' windows. If you specify both @parent and
+ * @parentWinId at the same time, this function will return NULL. 
  *
  * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
  *
- * Since: 0.3
+ * Return value: a new #SansboxFileChooserDialog
  *
- * Returns: the new dialog as a #SandboxFileChooserDialog
+ * See also: lfcd_new() and lfcd_new_with_remote_parent() to create a
+ * #LocalFileChooserDialog, and sfcd_new() to create a #SandboxFileChooserDialog
+ * regardless of whether local or remote. 
  *
- FIXME change the API to make it not use a GtkWidget
- FIXME where are the properties? the ctor must handle and dispatch them
+ * Since: 0.5
  **/
 SandboxFileChooserDialog *
 lfcd_new_valist (const gchar          *title,
@@ -192,7 +210,6 @@ lfcd_new_valist (const gchar          *title,
                  const gchar          *first_button_text,
                  va_list               varargs)
 {
-  g_return_val_if_fail (title != NULL, NULL);
   g_return_val_if_fail (parent == NULL || parentWinId == NULL, NULL);
 
   LocalFileChooserDialog *lfcd = g_object_new (LOCAL_TYPE_FILE_CHOOSER_DIALOG, NULL);
@@ -207,7 +224,8 @@ lfcd_new_valist (const gchar          *title,
   g_object_ref_sink (lfcd->priv->dialog);
 
   // Set the remote parent's id to whatever was passed to us
-  lfcd->priv->remote_parent = g_strdup (parentWinId);
+  if (parentWinId)
+    lfcd->priv->remote_parent = g_strdup (parentWinId);
 
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
             lfcd->priv->id, title);
@@ -216,23 +234,98 @@ lfcd_new_valist (const gchar          *title,
 }
 
 /**
- * lfcd_new_with_remote_parent:
- * @dialog: a #GtkFileChooserDialog 
- 
- 
- (allow-none)
+ * lfcd_new_variant:
+ * @title: (allow-none): Title of the dialog, or %NULL
+ * @parentWinId: (allow-none): Window Identifier of a remote transient parent, or %NULL
+ * @parent: (allow-none): Transient parent of the dialog, or %NULL
+ * @action: Open or save mode for the dialog (see #GtkFileChooserAction)
+ * @button_list: an array of (gchar *button, #GtkResponseType id) pairs stored in a GVariant
+ *
+ * Creates a new #LocalFileChooserDialog. You usually should not use this
+ * function, unless implementing a server or a wrapper for #LocalFileChooserDialog.
+ * In a normal application, you almost always want to use sfcd_new().
  * 
- * Creates a new instance of #SandboxFileChooserDialog and associates @dialog
- * with it. Fails if @dialog is %NULL. Free with sfcd_destroy(). FIXME
+ * @parentWinId refers to a unique window identifier that a privileged server may
+ * pass onto the compositor of your session, so that the compositor treats the
+ * #LocalFileChooserDialog created by this function as a transient child of the
+ * window identified by @parentWinId. Bear in mind that the compositor needs to
+ * recognise your application as a legitimate privileged server for it to attach
+ * this dialog to other processes' windows. If you specify both @parent and
+ * @parentWinId at the same time, this function will return NULL. 
  *
  * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
  *
- * Since: 0.3
+ * Return value: a new #SansboxFileChooserDialog
  *
- * Returns: the new dialog as a #SandboxFileChooserDialog
+ * See also: lfcd_new() and lfcd_new_with_remote_parent() to create a
+ * #LocalFileChooserDialog, and sfcd_new() to create a #SandboxFileChooserDialog
+ * regardless of whether local or remote. 
  *
- FIXME change the API to make it not use a GtkWidget
- FIXME where are the properties? the ctor must handle and dispatch them
+ * Since: 0.5
+ **/
+SandboxFileChooserDialog *
+lfcd_new_variant (const gchar          *title,
+                  const gchar          *parentWinId,
+                  GtkWindow            *parent,
+                  GtkFileChooserAction  action,
+                  GVariant             *button_list)
+{
+  g_return_val_if_fail (parent == NULL || parentWinId == NULL, NULL);
+
+  GVariant               *item = NULL;
+  GVariantIter           *iter = NULL;
+  LocalFileChooserDialog *lfcd = g_object_new (LOCAL_TYPE_FILE_CHOOSER_DIALOG, NULL);
+  g_return_val_if_fail (lfcd != NULL, NULL);
+
+  lfcd->priv->dialog = gtk_file_chooser_dialog_new_valist (title,
+                                                          parent,
+                                                          action,
+                                                          NULL,
+                                                          NULL);
+
+	// Populate dialog with buttons
+  g_variant_get (button_list, "a{sv}", &iter);
+	while ((item = g_variant_iter_next_value (iter)))
+  {
+    const gchar *key;
+    GVariant *value;
+
+    g_variant_get (item, "{sv}", &key, &value);
+    gtk_dialog_add_button (GTK_DIALOG (lfcd->priv->dialog), key, g_variant_get_int32 (value));
+  }
+
+  g_object_ref_sink (lfcd->priv->dialog);
+
+  // Set the remote parent's id to whatever was passed to us
+  if (parentWinId)
+    lfcd->priv->remote_parent = g_strdup (parentWinId);
+
+  syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
+            lfcd->priv->id, title);
+
+  return SANDBOX_FILE_CHOOSER_DIALOG (lfcd);
+}
+
+/**
+ * lfcd_new:
+ * @title: (allow-none): Title of the dialog, or %NULL
+ * @parent: (allow-none): Transient parent of the dialog, or %NULL
+ * @action: Open or save mode for the dialog (see #GtkFileChooserAction)
+ * @first_button_text: (allow-none): stock ID or text to go in the first button, or %NULL
+ * @...: response ID for the first button, then additional (button, id) pairs, ending with %NULL
+ *
+ * Creates a new #LocalFileChooserDialog. You usually do not need to use this
+ * function. See sfcd_new() instead.
+ * 
+ * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
+ *
+ * Return value: a new #SansboxFileChooserDialog
+ *
+ * See also: lfcd_new_with_remote_parent() to create a #LocalFileChooserDialog
+ * with a remote parent, and sfcd_new() to create a #SandboxFileChooserDialog
+ * regardless of whether local or remote.
+ *
+ * Since: 0.5
  **/
 SandboxFileChooserDialog *
 lfcd_new (const gchar *title,
@@ -256,24 +349,32 @@ lfcd_new (const gchar *title,
 
 /**
  * lfcd_new_with_remote_parent:
- * @dialog: a #GtkFileChooserDialog 
- 
- 
- (allow-none)
+ * @title: (allow-none): Title of the dialog, or %NULL
+ * @parentWinid: (allow-none): Id of a transient parent window owned by another process 
+ * @action: Open or save mode for the dialog (see #GtkFileChooserAction)
+ * @first_button_text: (allow-none): stock ID or text to go in the first button, or %NULL
+ * @...: response ID for the first button, then additional (button, id) pairs, ending with %NULL
+ *
+ * Creates a new #LocalFileChooserDialog, whose transient parent is owned by a
+ * remote process.  You usually should not use this function, unless implementing
+ * a server. In a normal application, you almost always want to use sfcd_new().
  * 
- * Creates a new instance of #SandboxFileChooserDialog and associates @dialog
- * with it. Fails if @dialog is %NULL. Free with sfcd_destroy(). FIXME
+ * @parentWinId refers to a unique window identifier that a privileged server may
+ * pass onto the compositor of your session, so that the compositor treats the
+ * #LocalFileChooserDialog created by this function as a transient child of the
+ * window identified by @parentWinId. Bear in mind that the compositor needs to
+ * recognise your application as a legitimate privileged server for it to attach
+ * this dialog to other processes' windows. 
  *
  * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
- 
- parentWinid not null TODO
  *
- * Since: 0.3
+ * Return value: a new #SansboxFileChooserDialog
  *
- * Returns: the new dialog as a #SandboxFileChooserDialog
+ * See also: lfcd_new() to create a #LocalFileChooserDialog with a local parent,
+ * and sfcd_new() to create a #SandboxFileChooserDialog regardless of whether
+ * local or remote.
  *
- FIXME change the API to make it not use a GtkWidget
- FIXME where are the properties? the ctor must handle and dispatch them
+ * Since: 0.5
  **/
 SandboxFileChooserDialog *
 lfcd_new_with_remote_parent (const gchar *title,
