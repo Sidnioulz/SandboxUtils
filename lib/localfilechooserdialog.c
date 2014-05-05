@@ -60,7 +60,7 @@ struct _LocalFileChooserDialogPrivate
   gchar                 *id;            /* id of this instace */
 };
 
-G_DEFINE_TYPE_WITH_PRIVATE (LocalFileChooserDialog, lfcd, G_TYPE_OBJECT)
+G_DEFINE_TYPE_WITH_PRIVATE (LocalFileChooserDialog, lfcd, SANDBOX_TYPE_FILE_CHOOSER_DIALOG)
 
 static void                 lfcd_destroy                       (SandboxFileChooserDialog *);
 static SfcdState            lfcd_get_state                     (SandboxFileChooserDialog *);
@@ -2120,13 +2120,12 @@ static void
 lfcd_class_init (LocalFileChooserDialogClass *klass)
 {
   SandboxFileChooserDialogClass *sfcd_class = SANDBOX_FILE_CHOOSER_DIALOG_CLASS (klass);
-  GObjectClass *g_object_class = G_OBJECT_CLASS(klass);
 
   //FIXME maybe reintroduce signals here?
 
   /* Hook finalization functions */
-  g_object_class->dispose = lfcd_dispose; /* instance destructor, reverse of init */
-  g_object_class->finalize = lfcd_finalize; /* class finalization, reverse of class init */
+  sfcd_class->dispose = lfcd_dispose; /* instance destructor, reverse of init */
+  sfcd_class->finalize = lfcd_finalize; /* class finalization, reverse of class init */
 
   /* Hook SandboxFileChooserDialog API functions */
   sfcd_class->get_state = lfcd_get_state;
