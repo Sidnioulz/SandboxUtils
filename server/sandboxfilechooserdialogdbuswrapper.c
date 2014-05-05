@@ -11,6 +11,7 @@
  */
 
 #include <syslog.h>
+#include <sandboxutils.h>
 
 #include "sandboxfilechooserdialogdbuswrapper.h"
 
@@ -147,30 +148,13 @@ on_handle_new (SfcdDbusWrapper        *interface,
   GVariantIter               *iter       = NULL;
   GError                     *error      = NULL;
 
-  // Create GTK+ dialog
-  dialog = gtk_file_chooser_dialog_new (title, NULL, action, NULL, NULL);
-	if (dialog==NULL)
-	{
-		g_set_error (&error, g_quark_from_static_string (SFCD_ERROR_DOMAIN), SFCD_ERROR_CREATION,
-					"SfcdDbusWrapper.Sfcd.New: could not allocate memory to create GtkFileChooserDialog.\n");
-		_sfcd_dbus_wrapper_return_error (invocation, error);
+  // Create a new Local SandboxUtils dialog
+  sfcd = lfcd_new_variant (title,
+                           parent_id,
+                           NULL,
+                           action,
+                           button_list);
 
-		return TRUE;
-	}
-
-	// Populate dialog with buttons
-  g_variant_get (button_list, "a{sv}", &iter);
-	while ((item = g_variant_iter_next_value (iter)))
-  {
-    const gchar *key;
-    GVariant *value;
-
-    g_variant_get (item, "{sv}", &key, &value);
-    gtk_dialog_add_button (GTK_DIALOG (dialog), key, g_variant_get_int32 (value));
-  }
-
-  // Create SandboxUtils dialog
-  sfcd = sfcd_new (dialog);
   if (sfcd==NULL)
   {
 	  g_set_error (&error, g_quark_from_static_string (SFCD_ERROR_DOMAIN), SFCD_ERROR_CREATION,
