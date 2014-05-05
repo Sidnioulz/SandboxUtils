@@ -39,6 +39,7 @@ libsandboxutils_la_SOURCES = \
 		sandboxutilsmarshals.c \
 		sandboxfilechooserdialog.c \
 		localfilechooserdialog.c \
+		remotefilechooserdialog.c \
 		sandboxfilechooserdialogdbusobject.c \
 		sandboxutilscommon.c
 
@@ -46,6 +47,7 @@ libsandboxutils_la_HEADERS = \
 		sandboxutils.h \
 		sandboxutilscommon.h \
 		localfilechooserdialog.h \
+		remotefilechooserdialog.h \
 		sandboxfilechooserdialog.h \
 		sandboxfilechooserdialogdbusobject.h \
 		sandboxutilsmarshals.h
