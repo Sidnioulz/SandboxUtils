@@ -396,7 +396,7 @@ AC_SUBST(config_h_INCLUDES)
 
 
 # libsandboxutils includes, may need tweaking
-libsandboxutils_INCLUDES='$(config_h_INCLUDES) -I$(top_srcdir)/lib -I$(top_srcdir)'
+libsandboxutils_INCLUDES='$(config_h_INCLUDES) -I$(top_srcdir)/lib'
 AC_SUBST(libsandboxutils_INCLUDES)
 
 # sandboxutilsd:
@@ -409,9 +409,9 @@ AC_CONFIG_FILES([
 sandboxutils.pc
 Makefile
 lib/Makefile
+server/Makefile
 ])
 # docs/Makefile #TODO
-# server/Makefile #TODO
 # tests/Makefile #TODO
 
 AC_OUTPUT
