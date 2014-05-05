@@ -22,4 +22,10 @@
 const gchar *
 g_error_get_message (GError *err);
 
+const int
+min (int a, int b);
+
+const int
+max (int a, int b);
+
 #endif /* __SANDBOX_UTILS_COMMON_H__ */
