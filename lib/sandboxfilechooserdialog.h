@@ -446,6 +446,8 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
 //    GtkDialog: RESPONSE
 //    GtkWidget: ??? (TODO make list)
 
+//FIXME remove this hack ASAP
+void __temp_sandboxutils_init (gboolean);
 
 G_END_DECLS
 
