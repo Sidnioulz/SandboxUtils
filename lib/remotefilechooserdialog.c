@@ -374,10 +374,9 @@ rfcd_destroy (SandboxFileChooserDialog *sfcd)
 SfcdState
 rfcd_get_state (SandboxFileChooserDialog *sfcd)
 {
-  SfcdState state = SFCD_WRONG_STATE;
   gint stateHolder = SFCD_WRONG_STATE;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
-  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), state);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), SFCD_WRONG_STATE);
 
   GError *error = NULL;
   if (!sfcd_dbus_wrapper__call_get_state_sync (_rfcd_get_proxy (self),
@@ -389,18 +388,11 @@ rfcd_get_state (SandboxFileChooserDialog *sfcd)
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Destroy: error when destroying dialog %s -- %s",
             sfcd_get_id (sfcd), g_error_get_message (error));
   }
-  else
-  {
-    syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
-              sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
-  }
 
   g_object_unref (self);
 
   // In lack of a better option...
-  state = max (SFCD_WRONG_STATE, min (SFCD_LAST_STATE, stateHolder));
-
-  return state;
+  return max (SFCD_WRONG_STATE, min (SFCD_LAST_STATE, stateHolder));
 }
 
 const gchar *
@@ -412,30 +404,10 @@ rfcd_get_state_printable  (SandboxFileChooserDialog *sfcd)
 static const gchar *
 rfcd_get_dialog_title (SandboxFileChooserDialog *sfcd)
 {
-  gchar *title = NULL;
-
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), title);
 
-  /* TODO not yet implemented
-  GError *error = NULL;
-  if (!sfcd_dbus_wrapper__call_get_dialog_title_sync (_rfcd_get_proxy (self),
-                                             self->priv->remote_id,
-                                             &title,
-                                             NULL,
-                                             &error))
-  {
-    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetDialogTitle: error when querying dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (error));
-  }
-  else
-  {
-    syslog (LOG_DEBUG, "SandboxFileChooserDialog.GetDialogTitle: dialog '%s' is titled '%s'.\n",
-              sfcd_get_id (sfcd), title);
-  }
-  */
-
-  return title;
+  return self->priv->cached_title;
 }
 
 gboolean
