@@ -467,6 +467,14 @@ rfcd_run (SandboxFileChooserDialog *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_run_sync (_rfcd_get_proxy (self),
+                                         self->priv->remote_id,
+                                         NULL,
+                                         error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.Run: error when running dialog %s -- %s",
+            sfcd_get_id (sfcd), g_error_get_message (error));
+  }
 }
 
 void
