@@ -405,7 +405,7 @@ static const gchar *
 rfcd_get_dialog_title (SandboxFileChooserDialog *sfcd)
 {
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
-  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), title);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), NULL);
 
   return self->priv->cached_title;
 }
