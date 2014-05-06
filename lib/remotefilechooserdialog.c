@@ -48,6 +48,7 @@
 #include "sandboxfilechooserdialogdbusobject.h"
 #include "remotefilechooserdialog.h"
 #include "sandboxutilsmarshals.h"
+#include "sandboxutilscommon.h"
 
 struct _RemoteFileChooserDialogPrivate
 {
