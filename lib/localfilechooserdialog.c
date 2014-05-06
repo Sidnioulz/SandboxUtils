@@ -227,6 +227,8 @@ lfcd_new_valist (const gchar          *title,
   if (parentWinId)
     lfcd->priv->remote_parent = g_strdup (parentWinId);
 
+  //TODO connect signals here
+
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
             lfcd->priv->id, title);
 
@@ -272,18 +274,18 @@ lfcd_new_variant (const gchar          *title,
 {
   g_return_val_if_fail (parent == NULL || parentWinId == NULL, NULL);
 
-  GVariant               *item = NULL;
-  GVariantIter           *iter = NULL;
-  LocalFileChooserDialog *lfcd = g_object_new (LOCAL_TYPE_FILE_CHOOSER_DIALOG, NULL);
-  g_return_val_if_fail (lfcd != NULL, NULL);
-
-  lfcd->priv->dialog = gtk_file_chooser_dialog_new_valist (title,
-                                                          parent,
-                                                          action,
-                                                          NULL,
-                                                          NULL);
+  LocalFileChooserDialog *lfcd =
+        LOCAL_FILE_CHOOSER_DIALOG (lfcd_new_valist (title,
+                                                    parentWinId,
+                                                    parent,
+                                                    action,
+                                                    NULL,
+                                                    NULL));
 
 	// Populate dialog with buttons
+  GVariant               *item = NULL;
+  GVariantIter           *iter = NULL;
+
   g_variant_get (button_list, "a{sv}", &iter);
 	while ((item = g_variant_iter_next_value (iter)))
   {
@@ -293,15 +295,6 @@ lfcd_new_variant (const gchar          *title,
     g_variant_get (item, "{sv}", &key, &value);
     gtk_dialog_add_button (GTK_DIALOG (lfcd->priv->dialog), key, g_variant_get_int32 (value));
   }
-
-  g_object_ref_sink (lfcd->priv->dialog);
-
-  // Set the remote parent's id to whatever was passed to us
-  if (parentWinId)
-    lfcd->priv->remote_parent = g_strdup (parentWinId);
-
-  syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
-            lfcd->priv->id, title);
 
   return SANDBOX_FILE_CHOOSER_DIALOG (lfcd);
 }
