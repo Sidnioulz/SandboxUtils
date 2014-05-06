@@ -1,6 +1,7 @@
 #include "exampleapp.h"
 #include "exampleappwin.h"
 #include <gtk/gtk.h>
+#include <glib/gprintf.h>
 #include <sandboxutils.h>
 
 struct ExampleAppWindow {
@@ -34,6 +35,18 @@ on_open_clicked (GtkButton *button,
                                                      "Cancel", GTK_RESPONSE_CANCEL,
                                                      NULL);
 
+        if (dialog)
+        {
+          GError *error = NULL;
+          sfcd_run (dialog, &error);
+          if (error)
+          {
+            g_printf ("Error: %s\n", error->message);
+            g_error_free (error); //TODO
+          }
+        }
+        else
+            g_printf ("%s", "Could not create a dialog.\n");
 }
 static void
 on_save_clicked (GtkButton *button,
@@ -47,6 +60,16 @@ on_save_clicked (GtkButton *button,
                                                      "Cancel", GTK_RESPONSE_CANCEL,
                                                      NULL);
 
+        if (dialog)
+        {
+          GError *error = NULL;
+          sfcd_run (dialog, &error);
+          if (error)
+          {
+            g_printf ("Error: %s\n", error->message);
+            g_error_free (error); //TODO
+          }
+        }
 }
 
 
