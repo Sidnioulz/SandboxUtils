@@ -247,7 +247,7 @@ rfcd_new_valist (const gchar          *title,
   // Remember local parent's identity
   rfcd->priv->local_parent = parent;
   //TODO get from parent
-  const gchar *parentWinId = NULL;
+  const gchar *parentWinId = "(null)";//NULL;
 
   // Build button list
   GVariantBuilder builder;
