@@ -389,8 +389,6 @@ rfcd_get_state (SandboxFileChooserDialog *sfcd)
             sfcd_get_id (sfcd), g_error_get_message (error));
   }
 
-  g_object_unref (self);
-
   // In lack of a better option...
   return max (SFCD_WRONG_STATE, min (SFCD_LAST_STATE, stateHolder));
 }
