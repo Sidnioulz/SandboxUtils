@@ -20,7 +20,7 @@ check_DATA =
 
 ACLOCAL_AMFLAGS = -I m4macros ${ACLOCAL_FLAGS}
 
-SUBDIRS = . lib server # TODO docs tests
+SUBDIRS = . lib examples server # TODO docs
 DIST_SUBDIRS = $(SUBDIRS) # TODO? build
 
 AM_CPPFLAGS = 					\

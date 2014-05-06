@@ -326,8 +326,11 @@ AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 AM_CONDITIONAL(HAVE_DBUS, [test "x$have_dbus" = "xyes"])
 
-AC_PATH_PROGS([GDBUS_CODEGEN], [gdbus-codegen])
+AC_PATH_PROG([GDBUS_CODEGEN], [gdbus-codegen])
 AM_CONDITIONAL([HAVE_GDBUS_CODEGEN], [test x$GDBUS_CODEGEN = xgdbus-codegen ])
+
+AC_PATH_PROG([GLIB_COMPILE_RESOURCES], [glib-compile-resources])
+AM_CONDITIONAL([HAVE_GLIB_COMPILE_RESOURCES], [test x$GLIB_COMPILE_RESOURCES = xgdbus-codegen ])
 
 # Check for GLib
 PKG_CHECK_MODULES(GLIB,
@@ -410,9 +413,10 @@ sandboxutils.pc
 lib/sandboxutilscommon.h
 Makefile
 lib/Makefile
+examples/Makefile
+examples/application3/Makefile
 server/Makefile
 ])
 # docs/Makefile #TODO
-# tests/Makefile #TODO
 
 AC_OUTPUT
