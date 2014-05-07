@@ -187,7 +187,8 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
   /**
    * SandboxFileChooserDialog::response:
    * @dialog: the dialog on which the signal is emitted
-   * @response_id: the response ID
+   * @response_id: the response id obtained when the dialog finished running
+   * @return_state: the state of the dialog after running
    *
    * Emitted when an action widget is clicked, the dialog receives a
    * delete event, or the application programmer calls gtk_dialog_response().
@@ -200,8 +201,9 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
 		  G_SIGNAL_RUN_LAST,
 		  0,
 		  NULL, NULL,
-      sandboxutils_marshal_VOID__INT,
-		  G_TYPE_NONE, 1,
+      sandboxutils_marshal_VOID__INT_INT,
+		  G_TYPE_NONE, 2,
+		  G_TYPE_INT,
 		  G_TYPE_INT);
 
   /**
@@ -219,27 +221,6 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
 		  NULL, NULL,
       sandboxutils_marshal_VOID__VOID,
 		  G_TYPE_NONE, 0);
-
-  /**
-   * SandboxFileChooserDialog::run-finished:
-   * @object: the object which will receive the signal.
-   * @dialog_id: the id of the dialog that ran and sent the signal
-   * @response_id: the response id obtained when the dialog finished running
-   * @return_state: the state of the dialog after running
-   * @destroyed: whether the dialog should be considered destroyed or not
-   */
-  klass->run_finished_signal =
-      g_signal_new ("run-finished",
-                    G_TYPE_FROM_CLASS (g_object_class),
-                    G_SIGNAL_RUN_FIRST,
-                    0,
-                    NULL, NULL,
-                    sandboxutils_marshal_VOID__STRING_INT_INT_BOOLEAN,
-                     G_TYPE_NONE, 4,
-                    G_TYPE_STRING,
-                    G_TYPE_INT,
-                    G_TYPE_INT,
-                    G_TYPE_BOOLEAN);
 
   /* Hook finalization functions */
   g_object_class->dispose = sfcd_dispose; /* instance destructor, reverse of init */

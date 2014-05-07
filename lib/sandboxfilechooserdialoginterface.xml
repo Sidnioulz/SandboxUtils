@@ -23,11 +23,10 @@
      <signal name='Destroy'>
 			 <arg type='s' name='dialog_id' />
      </signal>
-     <signal name='RunDone'>
+     <signal name='Response'>
 			 <arg type='s' name='dialog_id' />
-       <arg type='i' name='return_code' />
+       <arg type='i' name='response_id' />
        <arg type='i' name='state' />
-       <arg type='b' name='destroyed' />
      </signal>
 		 <method name='Present'>
 			 <arg type='s' name='dialog_id' direction='in' />

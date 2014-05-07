@@ -130,8 +130,28 @@ _sfcd_dbus_wrapper_return_error (GDBusMethodInvocation    *invocation,
 }
 
 //TODO listen to signals on sfcd's and then emit GDBus signals
-// run-finished without destroy: forward
-// run-finished with destroy: clean-up client's table
+
+static void
+on_handle_response_signal (SandboxFileChooserDialog *sfcd,
+                           gint                      response_id,
+                           gint                      state,
+                           gpointer                  user_data)
+{
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  const gchar                *dialog_id  = sfcd_get_id (sfcd);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    sfcd_dbus_wrapper__emit_response (info->interface,
+                                     dialog_id,
+                                     response_id,
+                                     state);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (NULL, sfcd, dialog_id);
+
+  return;
+}
 
 static void
 on_handle_destroy_signal (SandboxFileChooserDialog *sfcd,
@@ -187,6 +207,7 @@ on_handle_new (SfcdDbusWrapper        *interface,
 
   // Connect to signals
   g_signal_connect (sfcd, "destroy", (GCallback) on_handle_destroy_signal, info);
+  g_signal_connect (sfcd, "response", (GCallback) on_handle_response_signal, info);
 
   // Store dialog in the client's table and return its id
   dialog_id = g_strdup_printf ("%p", sfcd);
@@ -233,7 +254,9 @@ on_handle_destroy (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup_and_remove (cli, dialog_id)) != NULL)
   {
+    //TODO disconnect destroy signal temporarily.
     sfcd_destroy (sfcd);
+    //TODO reconnect it.
     sfcd_dbus_wrapper__complete_destroy (interface, invocation);
   }
   _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);

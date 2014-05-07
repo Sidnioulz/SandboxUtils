@@ -160,7 +160,6 @@ static void
 _lfcd_on_hide (SandboxFileChooserDialog *sfcd,
                 gpointer ignore)
 {
-  syslog (LOG_DEBUG, "HELLO Emit Hide\n");
   SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
   g_signal_emit (sfcd,
                  klass->hide_signal,
@@ -171,7 +170,6 @@ static void
 _lfcd_on_show (SandboxFileChooserDialog *sfcd,
                 gpointer ignore)
 {
-  syslog (LOG_DEBUG, "HELLO Emit Show\n");
   SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
   g_signal_emit (sfcd,
                  klass->show_signal,
@@ -269,10 +267,8 @@ lfcd_new_valist (const gchar          *title,
   SandboxFileChooserDialog *sfcd = SANDBOX_FILE_CHOOSER_DIALOG (lfcd);
   g_signal_connect_swapped (lfcd->priv->dialog, "hide", (GCallback) _lfcd_on_hide, sfcd);
   g_signal_connect_swapped (lfcd->priv->dialog, "show", (GCallback) _lfcd_on_show, sfcd);
-  //g_signal_connect_swapped (sfcd, "destroy", (GCallback) lfcd_destroy, sfcd);
   
   //TODO manage close
-  //TODO manage destroy
 
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
             lfcd->priv->id, title);
@@ -641,18 +637,9 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     syslog (LOG_DEBUG, "SandboxFileChooserDialog._RunFunc: dialog '%s' ('%s') was marked for deletion while running, will be deleted.\n",
             sfcd_get_id (sfcd), gtk_window_get_title (GTK_WINDOW (self->priv->dialog)));
 
-    // Emit a signal that informs of the deletion
-    // TODO "destroy/ed" signal?
-    g_signal_emit (sfcd,
-                   klass->run_finished_signal,
-                   0, 
-                   sfcd_get_id (sfcd),
-                   d->response_id,
-                   SFCD_WRONG_STATE,
-                   TRUE);
-    
     // We drop our own reference to get the object destroyed. If no other method
     // is being called, then the object will reach a refcount of 0 and dispose.
+    // sfcd_destroy() will signal deletion back to owners of this dialog.
     sfcd_destroy (sfcd);
   }
   else
@@ -690,14 +677,11 @@ G_GNUC_END_IGNORE_DEPRECATIONS
       self->priv->state = SFCD_DATA_RETRIEVAL;
     }
 
-    //TODO rename signal to match original API better
     g_signal_emit (sfcd,
-                   klass->run_finished_signal,
-                   0, 
-                   sfcd_get_id (sfcd),
+                   klass->response_signal,
+                   0,
                    d->response_id,
-                   self->priv->state,
-                   FALSE);
+                   self->priv->state);
   }
 
   g_mutex_unlock (&self->priv->stateMutex);

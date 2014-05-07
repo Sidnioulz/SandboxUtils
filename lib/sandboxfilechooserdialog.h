@@ -164,7 +164,6 @@ struct _SandboxFileChooserDialogClass
   guint hide_signal;
   guint response_signal;
   guint show_signal;
-  guint run_finished_signal; //TODO EXTERMINATE
 };
 
 GType sfcd_get_type (void);
@@ -451,24 +450,6 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
 
 /* 
 
-The “delete-event” signal
-gboolean
-user_function (GtkWidget *widget,
-               GdkEvent  *event,
-               gpointer   user_data)
-The ::delete-event signal is emitted if a user requests that a toplevel window is closed. The default handler for this signal destroys the window. Connecting gtk_widget_hide_on_delete() to this signal will cause the window to be hidden instead, so that it can later be shown again without reconstructing it.
-
-The “destroy” signal
-void
-user_function (GtkWidget *object,
-               gpointer   user_data)
-Signals that all holders of a reference to the widget should release the reference that they hold. May result in finalization of the widget if all references are released.
-
-The “hide” signal?
-The “show” signal?
-
-
-
 The “focus-out-event” signal
 gboolean
 user_function (GtkWidget *widget,
@@ -477,8 +458,6 @@ user_function (GtkWidget *widget,
 The ::focus-out-event signal will be emitted when the keyboard focus leaves the widget 's window.
 
 To receive this signal, the GdkWindow associated to the widget needs to enable the GDK_FOCUS_CHANGE_MASK mask.
-
-
 
 The “window-state-event” signal
 gboolean
