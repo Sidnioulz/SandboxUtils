@@ -49,7 +49,11 @@
 #endif /* !G_ENABLE_DEBUG */
 
 
-/* VOID:STRING,INT,INT,BOOLEAN (sandboxutilsmarshals.list:1) */
+/* VOID:VOID (sandboxutilsmarshals.list:1) */
+
+/* VOID:INT (sandboxutilsmarshals.list:2) */
+
+/* VOID:STRING,INT,INT,BOOLEAN (sandboxutilsmarshals.list:3) */
 void
 sandboxutils_marshal_VOID__STRING_INT_INT_BOOLEAN (GClosure     *closure,
                                                    GValue       *return_value G_GNUC_UNUSED,

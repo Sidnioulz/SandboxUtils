@@ -6,7 +6,13 @@
 
 G_BEGIN_DECLS
 
-/* VOID:STRING,INT,INT,BOOLEAN (sandboxutilsmarshals.list:1) */
+/* VOID:VOID (sandboxutilsmarshals.list:1) */
+#define sandboxutils_marshal_VOID__VOID	g_cclosure_marshal_VOID__VOID
+
+/* VOID:INT (sandboxutilsmarshals.list:2) */
+#define sandboxutils_marshal_VOID__INT	g_cclosure_marshal_VOID__INT
+
+/* VOID:STRING,INT,INT,BOOLEAN (sandboxutilsmarshals.list:3) */
 extern void sandboxutils_marshal_VOID__STRING_INT_INT_BOOLEAN (GClosure     *closure,
                                                                GValue       *return_value,
                                                                guint         n_param_values,
