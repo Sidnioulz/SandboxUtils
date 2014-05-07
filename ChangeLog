@@ -1,3 +1,29 @@
+2014-05-07  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * server/sandboxfilechooserdbuswrapper.c: Now forwarding destroy signal to
+    the client and removing dialogs that emit it.
+
+    * lib/*filechooserdialog.*: Handing the show/hide/destroy sigals.
+
+    * lib/sandboxutilsmarshal.*: Automatically generating GObject marshallers.
+
+    * examples/application3/*: Now testing Create, Run, CancelRun and Destroy.
+
+    * lib/*filechooserdialog.*: Made a mistake by touching dispose/finalize, which
+    is now fixed. Fixed class init that used to inherit GObject directly.
+
+2014-05-06  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * configure.ac: Version 0.5.1
+
+    * lib/remotefilechooserdialog.c: Minor bug fixes, implemented Run, TODO
+
+    * examples/application3/*: Copied basic GTK+ example app with recent widgets,
+    and added some Open/Save buttons that only create and run a dialog right now
+    (no handling of actual returned filenames because signals are not exposed yet).
+
+    * docs/*: Pointless agitation in Makefile.am, not meant to build at all yet.
+
 2014-05-05  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
     * configure.ac: Version 0.5.0
