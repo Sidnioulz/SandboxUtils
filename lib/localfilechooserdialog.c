@@ -121,6 +121,20 @@ static void
 lfcd_dispose (GObject* object)
 {
   LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (object);
+  SandboxFileChooserDialog *sfcd = SANDBOX_FILE_CHOOSER_DIALOG (self);
+  SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
+
+  // Clean up signal handlers and loop
+  g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->close_signal,
+                                        0, NULL, NULL, NULL);
+  g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->destroy_signal,
+                                        0, NULL, NULL, NULL);
+  g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->hide_signal,
+                                        0, NULL, NULL, NULL);
+  g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->response_signal,
+                                        0, NULL, NULL, NULL);
+  g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->show_signal,
+                                        0, NULL, NULL, NULL);
 
   g_mutex_clear (&self->priv->stateMutex);
 
@@ -140,6 +154,28 @@ lfcd_dispose (GObject* object)
 static void
 lfcd_finalize (GObject* object)
 {
+}
+
+static void
+_lfcd_on_hide (SandboxFileChooserDialog *sfcd,
+                gpointer ignore)
+{
+  syslog (LOG_DEBUG, "HELLO Emit Hide\n");
+  SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
+  g_signal_emit (sfcd,
+                 klass->hide_signal,
+                 0);
+}
+
+static void
+_lfcd_on_show (SandboxFileChooserDialog *sfcd,
+                gpointer ignore)
+{
+  syslog (LOG_DEBUG, "HELLO Emit Show\n");
+  SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
+  g_signal_emit (sfcd,
+                 klass->show_signal,
+                 0);
 }
 
 static GtkWidget *
@@ -227,7 +263,16 @@ lfcd_new_valist (const gchar          *title,
   if (parentWinId)
     lfcd->priv->remote_parent = g_strdup (parentWinId);
 
-  //TODO connect signals here
+  // Connecting signals here - we do not connect to signals like close or destroy
+  // that occur only when we are already cleaning up the dialog. Instead we emit
+  // them ourselves.
+  SandboxFileChooserDialog *sfcd = SANDBOX_FILE_CHOOSER_DIALOG (lfcd);
+  g_signal_connect_swapped (lfcd->priv->dialog, "hide", (GCallback) _lfcd_on_hide, sfcd);
+  g_signal_connect_swapped (lfcd->priv->dialog, "show", (GCallback) _lfcd_on_show, sfcd);
+  //g_signal_connect_swapped (sfcd, "destroy", (GCallback) lfcd_destroy, sfcd);
+  
+  //TODO manage close
+  //TODO manage destroy
 
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
             lfcd->priv->id, title);
@@ -397,6 +442,11 @@ lfcd_destroy (SandboxFileChooserDialog *sfcd)
 
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
               sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
+  SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
+
+  g_signal_emit (self,
+                 klass->destroy_signal,
+                 0);
 
   g_object_unref (self);
 }
@@ -2113,12 +2163,13 @@ static void
 lfcd_class_init (LocalFileChooserDialogClass *klass)
 {
   SandboxFileChooserDialogClass *sfcd_class = SANDBOX_FILE_CHOOSER_DIALOG_CLASS (klass);
+  GObjectClass  *g_object_class = G_OBJECT_CLASS(klass);
 
   //FIXME maybe reintroduce signals here?
 
   /* Hook finalization functions */
-  sfcd_class->dispose = lfcd_dispose; /* instance destructor, reverse of init */
-  sfcd_class->finalize = lfcd_finalize; /* class finalization, reverse of class init */
+  g_object_class->dispose = lfcd_dispose; /* instance destructor, reverse of init */
+  g_object_class->finalize = lfcd_finalize; /* class finalization, reverse of class init */
 
   /* Hook SandboxFileChooserDialog API functions */
   sfcd_class->get_state = lfcd_get_state;

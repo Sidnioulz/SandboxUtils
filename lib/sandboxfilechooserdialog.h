@@ -116,8 +116,6 @@ struct _SandboxFileChooserDialogClass
   
   /* Pointers to virtual methods implemented by local and remote dialogs */
   //TODO get/set_dialog_title
-  void                 (*finalize)                      (GObject *);
-  void                 (*dispose)                       (GObject *);
   void                 (*destroy)                       (SandboxFileChooserDialog *);
   SfcdState            (*get_state)                     (SandboxFileChooserDialog *);
   const gchar *        (*get_state_printable)           (SandboxFileChooserDialog *);
@@ -161,7 +159,12 @@ struct _SandboxFileChooserDialogClass
 
   /* Class signals */
   //TODO whole signal thing
-  guint run_finished_signal;
+  guint close_signal;
+  guint destroy_signal;
+  guint hide_signal;
+  guint response_signal;
+  guint show_signal;
+  guint run_finished_signal; //TODO EXTERMINATE
 };
 
 GType sfcd_get_type (void);
@@ -439,12 +442,56 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
 //
 // TODO check which signals are allowed
 //GtkFileChooserConfirmation	confirm-overwrite	Run Last    // TODO implement
-//void	current-folder-changed	Run Last                    // Not exported, forbidden info
-//void	file-activated	Run Last                            // Not exported, "run-finished" instead
-//void	selection-changed	Run Last                          // Not exported, forbidden info
 //void	update-preview	Run Last                            // TODO new architecture for widget preview
-//    GtkDialog: RESPONSE
-//    GtkWidget: ??? (TODO make list)
+
+//void	close	Action
+//void  close GtkDialog
+//void	response	Run Last
+//void  response (GtkDialog *dialog, gint response_id, gpointer user_data)
+
+/* 
+
+The “delete-event” signal
+gboolean
+user_function (GtkWidget *widget,
+               GdkEvent  *event,
+               gpointer   user_data)
+The ::delete-event signal is emitted if a user requests that a toplevel window is closed. The default handler for this signal destroys the window. Connecting gtk_widget_hide_on_delete() to this signal will cause the window to be hidden instead, so that it can later be shown again without reconstructing it.
+
+The “destroy” signal
+void
+user_function (GtkWidget *object,
+               gpointer   user_data)
+Signals that all holders of a reference to the widget should release the reference that they hold. May result in finalization of the widget if all references are released.
+
+The “hide” signal?
+The “show” signal?
+
+
+
+The “focus-out-event” signal
+gboolean
+user_function (GtkWidget *widget,
+               GdkEvent  *event,
+               gpointer   user_data)
+The ::focus-out-event signal will be emitted when the keyboard focus leaves the widget 's window.
+
+To receive this signal, the GdkWindow associated to the widget needs to enable the GDK_FOCUS_CHANGE_MASK mask.
+
+
+
+The “window-state-event” signal
+gboolean
+user_function (GtkWidget *widget,
+               GdkEvent  *event,
+               gpointer   user_data)
+The ::window-state-event will be emitted when the state of the toplevel window associated to the widget changes.
+
+To receive this signal the GdkWindow associated to the widget needs to enable the GDK_STRUCTURE_MASK mask. GDK will enable this mask automatically for all new windows.
+
+
+*/
+
 
 //FIXME remove this hack ASAP
 void __temp_sandboxutils_init (gboolean);

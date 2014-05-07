@@ -20,6 +20,9 @@
 		 <method name='Run'>
 			 <arg type='s' name='dialog_id' direction='in' />
 		 </method>
+     <signal name='Destroy'>
+			 <arg type='s' name='dialog_id' />
+     </signal>
      <signal name='RunDone'>
 			 <arg type='s' name='dialog_id' />
        <arg type='i' name='return_code' />

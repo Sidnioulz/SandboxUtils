@@ -93,7 +93,6 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
-#include <syslog.h>
 
 #include "sandboxfilechooserdialog.h"
 #include "sandboxutilsmarshals.h"
@@ -133,6 +132,95 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
   GObjectClass  *g_object_class = G_OBJECT_CLASS(klass);
 
   /**
+   * SandboxFileChooserDialog::close:
+   * @dialog: the dialog on which the signal is emitted
+   *
+   * The ::close signal is a
+   * <link linkend="keybinding-signals">keybinding signal</link>
+   * which gets emitted when the user uses a keybinding to close
+   * the @dialog.
+   *
+   * The default binding for this signal is the Escape key.
+   */
+  klass->close_signal  =
+    g_signal_new ("close",
+	                G_OBJECT_CLASS_TYPE (g_object_class),
+	                G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+	                0,
+	                NULL, NULL,
+                  sandboxutils_marshal_VOID__VOID,
+	                G_TYPE_NONE, 0);
+
+  /**
+   * SandboxFileChooserDialog::destroy:
+   * @dialog: the dialog on which the signal is emitted
+   *
+   * Signals that all holders of a reference to the @dialog should release
+   * the reference that they hold. May result in finalization of the widget
+   * if all references are released.
+   */
+  klass->destroy_signal =
+    g_signal_new ("destroy",
+                  G_TYPE_FROM_CLASS (g_object_class),
+                  G_SIGNAL_RUN_CLEANUP | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
+	                0,
+                  NULL, NULL,
+                  sandboxutils_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
+
+  /**
+   * SandboxFileChooserDialog::hide:
+   * @dialog: the dialog on which the signal is emitted
+   *
+   * The ::hide signal is emitted when the @dialog is hidden, for example when
+   * the user (or the window manager) minimizes your application's window.
+   */
+  klass->hide_signal  =
+    g_signal_new ("hide",
+		              G_OBJECT_CLASS_TYPE (g_object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0,
+		              NULL, NULL,
+                  sandboxutils_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
+
+  /**
+   * SandboxFileChooserDialog::response:
+   * @dialog: the dialog on which the signal is emitted
+   * @response_id: the response ID
+   *
+   * Emitted when an action widget is clicked, the dialog receives a
+   * delete event, or the application programmer calls gtk_dialog_response().
+   * On a delete event, the response ID is #GTK_RESPONSE_DELETE_EVENT.
+   * Otherwise, it depends on which action widget was clicked.
+   */
+  klass->response_signal  =
+    g_signal_new ("response",
+		  G_OBJECT_CLASS_TYPE (g_object_class),
+		  G_SIGNAL_RUN_LAST,
+		  0,
+		  NULL, NULL,
+      sandboxutils_marshal_VOID__INT,
+		  G_TYPE_NONE, 1,
+		  G_TYPE_INT);
+
+  /**
+   * SandboxFileChooserDialog::show:
+   * @dialog: the dialog on which the signal is emitted
+   *
+   * The ::show signal is emitted when the @dialog is shown, for example when
+   * the user opens your application's window after minimizing it.
+   */
+  klass->show_signal  =
+    g_signal_new ("show",
+		  G_OBJECT_CLASS_TYPE (g_object_class),
+		  G_SIGNAL_RUN_FIRST,
+      0,
+		  NULL, NULL,
+      sandboxutils_marshal_VOID__VOID,
+		  G_TYPE_NONE, 0);
+
+  /**
    * SandboxFileChooserDialog::run-finished:
    * @object: the object which will receive the signal.
    * @dialog_id: the id of the dialog that ran and sent the signal
@@ -154,8 +242,6 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
                     G_TYPE_BOOLEAN);
 
   /* Hook finalization functions */
-  klass->dispose = sfcd_dispose;
-  klass->finalize = sfcd_finalize; 
   g_object_class->dispose = sfcd_dispose; /* instance destructor, reverse of init */
   g_object_class->finalize = sfcd_finalize; /* class finalization, reverse of class init */
 }

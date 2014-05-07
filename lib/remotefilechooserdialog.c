@@ -293,7 +293,7 @@ rfcd_new_valist (const gchar          *title,
     //FIXME should I make the parent transient for this?
     //TODO take ownership?
     rfcd->priv->local_bits  = gtk_window_new (GTK_WINDOW_POPUP);
-    gtk_widget_show (rfcd->priv->local_bits);
+    //gtk_widget_show (rfcd->priv->local_bits);
 
     syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
             rfcd->priv->remote_id, title);
@@ -473,7 +473,7 @@ rfcd_run (SandboxFileChooserDialog *sfcd,
                                          error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Run: error when running dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (error));
+            sfcd_get_id (sfcd), g_error_get_message (*error));
   }
 }
 
@@ -484,6 +484,14 @@ rfcd_present (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_present_sync (_rfcd_get_proxy (self),
+                                             self->priv->remote_id,
+                                             NULL,
+                                             error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.Present: error when running dialog %s -- %s",
+            sfcd_get_id (sfcd), g_error_get_message (*error));
+  }
 }
 
 static void
@@ -493,6 +501,14 @@ rfcd_cancel_run (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_cancel_run_sync (_rfcd_get_proxy (self),
+                                                self->priv->remote_id,
+                                                NULL,
+                                                error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.CancelRun: error when running dialog %s -- %s",
+            sfcd_get_id (sfcd), g_error_get_message (*error));
+  }
 }
 
 static void
@@ -852,12 +868,13 @@ static void
 rfcd_class_init (RemoteFileChooserDialogClass *klass)
 {
   SandboxFileChooserDialogClass *sfcd_class = SANDBOX_FILE_CHOOSER_DIALOG_CLASS (klass);
+  GObjectClass  *g_object_class = G_OBJECT_CLASS(klass);
 
   //FIXME maybe reintroduce signals here?
 
   /* Hook finalization functions */
-  sfcd_class->dispose = rfcd_dispose; /* instance destructor, reverse of init */
-  sfcd_class->finalize = rfcd_finalize; /* class finalization, reverse of class init */
+  g_object_class->dispose = rfcd_dispose; /* instance destructor, reverse of init */
+  g_object_class->finalize = rfcd_finalize; /* class finalization, reverse of class init */
 
   /* Hook SandboxFileChooserDialog API functions */
   sfcd_class->get_state = rfcd_get_state;
