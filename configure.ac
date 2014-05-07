@@ -18,7 +18,7 @@ m4_define(glib_configure_ac)
 
 m4_define([su_major_version], [0])
 m4_define([su_minor_version], [5])
-m4_define([su_micro_version], [0])
+m4_define([su_micro_version], [1])
 m4_define([su_interface_age], [0])
 m4_define([su_binary_age], [0])
 
@@ -328,6 +328,9 @@ AM_CONDITIONAL(HAVE_DBUS, [test "x$have_dbus" = "xyes"])
 
 AC_PATH_PROG([GDBUS_CODEGEN], [gdbus-codegen])
 AM_CONDITIONAL([HAVE_GDBUS_CODEGEN], [test x$GDBUS_CODEGEN = xgdbus-codegen ])
+
+AC_PATH_PROG([GLIB_GENMARSHAL], [glib-genmarshal])
+AM_CONDITIONAL([HAVE_GLIB_GENMARSHAL], [test x$GLIB_GENMARSHAL = xglib-genmarshal ])
 
 AC_PATH_PROG([GLIB_COMPILE_RESOURCES], [glib-compile-resources])
 AM_CONDITIONAL([HAVE_GLIB_COMPILE_RESOURCES], [test x$GLIB_COMPILE_RESOURCES = xgdbus-codegen ])

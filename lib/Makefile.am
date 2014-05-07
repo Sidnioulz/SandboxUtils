@@ -23,9 +23,9 @@ AM_LDFLAGS = $(DBUS_LIBS) $(GTK_LIBS) $(SYSTEMD_LIBS) $(GLIB_LIBS) \
 lib_LTLIBRARIES = libsandboxutils.la
 
 if DEBUG
-  AM_CPPFLAGS += -ggdb3 -O0
+		AM_CPPFLAGS += -ggdb3 -O0
 else !DEBUG
-  AM_CPPFLAGS += -O2 -DNDEBUG
+		AM_CPPFLAGS += -O2 -DNDEBUG
 endif !DEBUG
 
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
@@ -35,13 +35,17 @@ libtool: $(LIBTOOL_DEPS)
 ## Building the library and include files
 libsandboxutils_la_CPPFLAGS = -DG_LOG_DOMAIN=\"libsandboxutils\" $(AM_CPPFLAGS)
 
+libsandboxutils_la_DEPENDENCIES = \
+		$(GDBUS_GENERATED) \
+		$(GLIB_MARSHAL_GENERATED)
+
 libsandboxutils_la_SOURCES = \
-		sandboxutilsmarshals.c \
 		sandboxfilechooserdialog.c \
 		localfilechooserdialog.c \
 		remotefilechooserdialog.c \
 		sandboxfilechooserdialogdbusobject.c \
-		sandboxutilscommon.c
+		sandboxutilscommon.c\
+		$(GLIB_MARSHAL_BODY)
 
 libsandboxutils_la_HEADERS = \
 		sandboxutils.h \
@@ -50,11 +54,25 @@ libsandboxutils_la_HEADERS = \
 		remotefilechooserdialog.h \
 		sandboxfilechooserdialog.h \
 		sandboxfilechooserdialogdbusobject.h \
-		sandboxutilsmarshals.h
+		$(GLIB_MARSHAL_HEADER)
 
 libsandboxutils_ladir=$(includedir)/sandboxutils/
 
-		
+## GLib marshal generation
+# glib-genmarshal sandboxutilsmarshals.list --body --prefix=sandboxutils_marshal > sandboxutilsmarshals.c
+# glib-genmarshal sandboxutilsmarshals.list --header --prefix=sandboxutils_marshal > sandboxutilsmarshals.h
+GLIB_MARSHAL_HEADER = sandboxutilsmarshals.h
+
+$(GLIB_MARSHAL_HEADER): sandboxutilsmarshals.list Makefile
+		$(GLIB_GENMARSHAL) --prefix=sandboxutils_marshal --header sandboxutilsmarshals.list > $(top_srcdir)/lib/sandboxutilsmarshals.h 2>&1
+
+GLIB_MARSHAL_BODY = sandboxutilsmarshals.c
+
+$(GLIB_MARSHAL_BODY): sandboxutilsmarshals.list Makefile
+		$(GLIB_GENMARSHAL) --prefix=sandboxutils_marshal --body sandboxutilsmarshals.list > $(top_srcdir)/lib/sandboxutilsmarshals.c 2>&1
+
+GLIB_MARSHAL_GENERATED= $(GLIB_MARSHAL_HEADER) $(GLIB_MARSHAL_BODY)
+
 ## GDBus interface generation
 # gdbus-codegen sandboxfilechooserdialoginterface.xml --interface-prefix=org.mupuf.SandboxUtils. --generate-c-code sandboxfilechooserdialogdbusobject --c-generate-object-manager 
 GDBUS_GENERATED = \
@@ -75,5 +93,5 @@ dist_doc_DATA: $(GDBUS_GENERATED)
 		$(CP) sfcd-interface-org.mupuf.SandboxUtils.SandboxFileChooserDialog.xml "$(realpath)/../docs/"
 		
 EXTRA_DIST += sandboxfilechooserdialoginterface.xml
-BUILT_SOURCES += $(GDBUS_GENERATED) $(libsandboxutils_la_SOURCES)
-CLEANFILES += $(GDBUS_GENERATED)
+BUILT_SOURCES += $(GDBUS_GENERATED) $(GLIB_MARSHAL_GENERATED) $(libsandboxutils_la_SOURCES)
+CLEANFILES += $(GDBUS_GENERATED) $(GLIB_MARSHAL_GENERATED)
