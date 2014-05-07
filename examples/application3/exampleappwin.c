@@ -19,21 +19,36 @@ struct ExampleAppWindowPrivate {
         GtkWidget *stack;
         GtkWidget *open_button;
         GtkWidget *save_button;
+        GtkWidget *cancel_button;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(ExampleAppWindow, example_app_window, GTK_TYPE_APPLICATION_WINDOW);
+
+static SandboxFileChooserDialog *dialog;
 
 static void
 on_open_clicked (GtkButton *button,
                  gpointer   user_data)
 {
+        if (dialog)
+        {
+          GError *error = NULL;
+          sfcd_present (dialog, &error);
+          if (error)
+          {
+            g_printf ("Error: %s\n", error->message);
+            g_error_free (error); //TODO
+          }
+          return;
+        }
+
         ExampleAppWindow *win = (ExampleAppWindow *) user_data;
-        SandboxFileChooserDialog *dialog = sfcd_new ("Open",
-                                                     GTK_WINDOW (win),
-                                                     GTK_FILE_CHOOSER_ACTION_OPEN,
-                                                     "Open", GTK_RESPONSE_OK,
-                                                     "Cancel", GTK_RESPONSE_CANCEL,
-                                                     NULL);
+        dialog = sfcd_new ("Open",
+                           GTK_WINDOW (win),
+                           GTK_FILE_CHOOSER_ACTION_OPEN,
+                           "Open", GTK_RESPONSE_OK,
+                           "Cancel", GTK_RESPONSE_CANCEL,
+                           NULL);
 
         if (dialog)
         {
@@ -48,10 +63,14 @@ on_open_clicked (GtkButton *button,
         else
             g_printf ("%s", "Could not create a dialog.\n");
 }
+
 static void
 on_save_clicked (GtkButton *button,
                  gpointer   user_data)
 {
+        if (dialog)
+          return;
+
         ExampleAppWindow *win = (ExampleAppWindow *) user_data;
         SandboxFileChooserDialog *dialog = sfcd_new ("Save",
                                                      GTK_WINDOW (win),
@@ -71,6 +90,22 @@ on_save_clicked (GtkButton *button,
           }
         }
 }
+static void
+on_cancel_clicked (GtkButton *button,
+                   gpointer   user_data)
+{
+        if (!dialog)
+          return;
+
+        GError *error = NULL;
+        sfcd_cancel_run (dialog, &error);
+        if (error)
+        {
+          g_printf ("Error: %s\n", error->message);
+          g_error_free (error); //TODO
+        }
+}
+
 
 
 static void
@@ -84,7 +119,6 @@ example_app_window_init (ExampleAppWindow *win)
 
         priv->open_button = gtk_button_new_from_icon_name ("document-open-symbolic", GTK_ICON_SIZE_BUTTON);
         gtk_widget_set_valign (priv->open_button, GTK_ALIGN_CENTER);
-        gtk_style_context_add_class (gtk_widget_get_style_context (priv->open_button), "suggested-action");
 
         gtk_header_bar_pack_start (GTK_HEADER_BAR (priv->header), priv->open_button);
         gtk_widget_show (priv->open_button);
@@ -93,12 +127,18 @@ example_app_window_init (ExampleAppWindow *win)
 
         priv->save_button = gtk_button_new_from_icon_name ("document-save-symbolic", GTK_ICON_SIZE_BUTTON);
         gtk_widget_set_valign (priv->save_button, GTK_ALIGN_CENTER);
-        gtk_style_context_add_class (gtk_widget_get_style_context (priv->save_button), "suggested-action");
 
         gtk_header_bar_pack_start (GTK_HEADER_BAR (priv->header), priv->save_button);
         gtk_widget_show (priv->save_button);
         g_signal_connect (priv->save_button, "clicked", (GCallback) on_save_clicked, win);
+    
 
+        priv->cancel_button = gtk_button_new_from_icon_name ("process-error-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_widget_set_valign (priv->cancel_button, GTK_ALIGN_CENTER);
+
+        gtk_header_bar_pack_start (GTK_HEADER_BAR (priv->header), priv->cancel_button);
+        gtk_widget_show (priv->cancel_button);
+        g_signal_connect (priv->cancel_button, "clicked", (GCallback) on_cancel_clicked, win);
 }
 
 static void
