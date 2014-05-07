@@ -86,8 +86,10 @@ _sfcd_dbus_wrapper_lookup_and_remove (SandboxUtilsClient  *cli,
   return sfcd;
 }
 
-/*
+/**
  * TODO doc
+ * @invocation (allow-none): .... or %NULL as a convenience to signal handlers
+ * who don't have an invocation available
  */
 static void
 _sfcd_dbus_wrapper_lookup_finished (GDBusMethodInvocation    *invocation,
@@ -131,6 +133,24 @@ _sfcd_dbus_wrapper_return_error (GDBusMethodInvocation    *invocation,
 // run-finished without destroy: forward
 // run-finished with destroy: clean-up client's table
 
+static void
+on_handle_destroy_signal (SandboxFileChooserDialog *sfcd,
+                         gpointer                   user_data)
+{
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  const gchar                *dialog_id  = sfcd_get_id (sfcd);
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup_and_remove (cli, dialog_id)) != NULL)
+  {
+    sfcd_dbus_wrapper__emit_destroy (info->interface,
+                                     dialog_id);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (NULL, sfcd, dialog_id);
+
+  return;
+}
+
 static gboolean
 on_handle_new (SfcdDbusWrapper        *interface,
                GDBusMethodInvocation  *invocation,
@@ -140,7 +160,8 @@ on_handle_new (SfcdDbusWrapper        *interface,
                GVariant               *button_list,
                gpointer                user_data)
 {
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   SandboxFileChooserDialog   *sfcd       = NULL;
   GtkWidget                  *dialog     = NULL;
   gchar                      *dialog_id  = NULL;
@@ -164,6 +185,9 @@ on_handle_new (SfcdDbusWrapper        *interface,
 	  return TRUE;
   }
 
+  // Connect to signals
+  g_signal_connect (sfcd, "destroy", (GCallback) on_handle_destroy_signal, info);
+
   // Store dialog in the client's table and return its id
   dialog_id = g_strdup_printf ("%p", sfcd);
   gchar *key = g_strdup (dialog_id);
@@ -184,7 +208,8 @@ on_handle_get_state (SfcdDbusWrapper        *interface,
                      gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
   {
@@ -203,7 +228,8 @@ on_handle_destroy (SfcdDbusWrapper        *interface,
                    gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup_and_remove (cli, dialog_id)) != NULL)
   {
@@ -224,7 +250,8 @@ on_handle_run (SfcdDbusWrapper        *interface,
                gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -248,7 +275,8 @@ on_handle_present (SfcdDbusWrapper        *interface,
                    gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -272,7 +300,8 @@ on_handle_cancel_run (SfcdDbusWrapper        *interface,
                       gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -297,7 +326,8 @@ on_handle_set_action (SfcdDbusWrapper        *interface,
                       gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -321,7 +351,8 @@ on_handle_get_action (SfcdDbusWrapper        *interface,
                       gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -346,7 +377,8 @@ on_handle_set_local_only (SfcdDbusWrapper        *interface,
                           gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -370,7 +402,8 @@ on_handle_get_local_only (SfcdDbusWrapper        *interface,
                           gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -395,7 +428,8 @@ on_handle_set_select_multiple (SfcdDbusWrapper        *interface,
                                gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -419,7 +453,8 @@ on_handle_get_select_multiple (SfcdDbusWrapper        *interface,
                                gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -444,7 +479,8 @@ on_handle_set_show_hidden (SfcdDbusWrapper        *interface,
                            gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -468,7 +504,8 @@ on_handle_get_show_hidden (SfcdDbusWrapper        *interface,
                            gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -493,7 +530,8 @@ on_handle_set_do_overwrite_confirmation (SfcdDbusWrapper        *interface,
                                          gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -517,7 +555,8 @@ on_handle_get_do_overwrite_confirmation (SfcdDbusWrapper        *interface,
                                          gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -542,7 +581,8 @@ on_handle_set_create_folders (SfcdDbusWrapper        *interface,
                               gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -566,7 +606,8 @@ on_handle_get_create_folders (SfcdDbusWrapper        *interface,
                               gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -591,7 +632,8 @@ on_handle_set_current_name (SfcdDbusWrapper        *interface,
                            gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -616,7 +658,8 @@ on_handle_set_filename (SfcdDbusWrapper        *interface,
                         gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -641,7 +684,8 @@ on_handle_set_current_folder (SfcdDbusWrapper        *interface,
                               gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -666,7 +710,8 @@ on_handle_set_uri (SfcdDbusWrapper        *interface,
                    gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -691,7 +736,8 @@ on_handle_set_current_folder_uri (SfcdDbusWrapper        *interface,
                                   gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -716,7 +762,8 @@ on_handle_add_shortcut_folder (SfcdDbusWrapper        *interface,
                                gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -741,7 +788,8 @@ on_handle_remove_shortcut_folder (SfcdDbusWrapper        *interface,
                                   gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -765,7 +813,8 @@ on_handle_list_shortcut_folders (SfcdDbusWrapper        *interface,
                                  gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -806,7 +855,8 @@ on_handle_add_shortcut_folder_uri (SfcdDbusWrapper        *interface,
                                    gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -831,7 +881,8 @@ on_handle_remove_shortcut_folder_uri (SfcdDbusWrapper        *interface,
                                       gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -855,7 +906,8 @@ on_handle_list_shortcut_folder_uris (SfcdDbusWrapper        *interface,
                                      gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -895,7 +947,8 @@ on_handle_get_current_name (SfcdDbusWrapper        *interface,
                             gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -922,7 +975,8 @@ on_handle_get_filename (SfcdDbusWrapper        *interface,
                         gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -949,7 +1003,8 @@ on_handle_get_filenames (SfcdDbusWrapper        *interface,
                          gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -989,7 +1044,8 @@ on_handle_get_current_folder (SfcdDbusWrapper        *interface,
                               gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -1016,7 +1072,8 @@ on_handle_get_uri (SfcdDbusWrapper        *interface,
                    gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -1043,7 +1100,8 @@ on_handle_get_uris (SfcdDbusWrapper        *interface,
                     gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -1083,7 +1141,8 @@ on_handle_get_current_folder_uri (SfcdDbusWrapper        *interface,
                                   gpointer                user_data)
 {
   SandboxFileChooserDialog   *sfcd       = NULL;
-  SandboxUtilsClient         *cli        = user_data;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
   GError                     *error      = NULL;
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
@@ -1117,42 +1176,42 @@ sfcd_dbus_on_bus_acquired (GDBusConnection *connection,
 
   info->interface = sfcd_dbus_wrapper__skeleton_new ();
 
-  g_signal_connect (info->interface, "handle-new", G_CALLBACK (on_handle_new), _get_client ());
-  g_signal_connect (info->interface, "handle-destroy", G_CALLBACK (on_handle_destroy), _get_client ());
-  g_signal_connect (info->interface, "handle-get-state", G_CALLBACK (on_handle_get_state), _get_client ());
-  g_signal_connect (info->interface, "handle-run", G_CALLBACK (on_handle_run), _get_client ());
-  g_signal_connect (info->interface, "handle-present", G_CALLBACK (on_handle_present), _get_client ());
-  g_signal_connect (info->interface, "handle-cancel-run", G_CALLBACK (on_handle_cancel_run), _get_client ());
-  g_signal_connect (info->interface, "handle-set-action", G_CALLBACK (on_handle_set_action), _get_client ());
-  g_signal_connect (info->interface, "handle-get-action", G_CALLBACK (on_handle_get_action), _get_client ());
-  g_signal_connect (info->interface, "handle-set-local-only", G_CALLBACK (on_handle_set_local_only), _get_client ());
-  g_signal_connect (info->interface, "handle-get-local-only", G_CALLBACK (on_handle_get_local_only), _get_client ());
-  g_signal_connect (info->interface, "handle-set-select-multiple", G_CALLBACK (on_handle_set_select_multiple), _get_client ());
-  g_signal_connect (info->interface, "handle-get-select-multiple", G_CALLBACK (on_handle_get_select_multiple), _get_client ());
-  g_signal_connect (info->interface, "handle-set-show-hidden", G_CALLBACK (on_handle_set_show_hidden), _get_client ());
-  g_signal_connect (info->interface, "handle-get-show-hidden", G_CALLBACK (on_handle_get_show_hidden), _get_client ());
-  g_signal_connect (info->interface, "handle-set-do-overwrite-confirmation", G_CALLBACK (on_handle_set_do_overwrite_confirmation), _get_client ());
-  g_signal_connect (info->interface, "handle-get-do-overwrite-confirmation", G_CALLBACK (on_handle_get_do_overwrite_confirmation), _get_client ());
-  g_signal_connect (info->interface, "handle-set-create-folders", G_CALLBACK (on_handle_set_create_folders), _get_client ());
-  g_signal_connect (info->interface, "handle-get-create-folders", G_CALLBACK (on_handle_get_create_folders), _get_client ());
-  g_signal_connect (info->interface, "handle-set-current-name", G_CALLBACK (on_handle_set_current_name), _get_client ());
-  g_signal_connect (info->interface, "handle-set-filename", G_CALLBACK (on_handle_set_filename), _get_client ());
-  g_signal_connect (info->interface, "handle-set-current-folder", G_CALLBACK (on_handle_set_current_folder), _get_client ());
-  g_signal_connect (info->interface, "handle-set-uri", G_CALLBACK (on_handle_set_uri), _get_client ());
-  g_signal_connect (info->interface, "handle-set-current-folder-uri", G_CALLBACK (on_handle_set_current_folder_uri), _get_client ());
-  g_signal_connect (info->interface, "handle-add-shortcut-folder", G_CALLBACK (on_handle_add_shortcut_folder), _get_client ());
-  g_signal_connect (info->interface, "handle-remove-shortcut-folder", G_CALLBACK (on_handle_remove_shortcut_folder), _get_client ());
-  g_signal_connect (info->interface, "handle-list-shortcut-folders", G_CALLBACK (on_handle_list_shortcut_folders), _get_client ());
-  g_signal_connect (info->interface, "handle-add-shortcut-folder-uri", G_CALLBACK (on_handle_add_shortcut_folder_uri), _get_client ());
-  g_signal_connect (info->interface, "handle-remove-shortcut-folder-uri", G_CALLBACK (on_handle_remove_shortcut_folder_uri), _get_client ());
-  g_signal_connect (info->interface, "handle-list-shortcut-folder-uris", G_CALLBACK (on_handle_list_shortcut_folder_uris), _get_client ());
-  g_signal_connect (info->interface, "handle-get-current-name", G_CALLBACK (on_handle_get_current_name), _get_client ());
-  g_signal_connect (info->interface, "handle-get-filename", G_CALLBACK (on_handle_get_filename), _get_client ());
-  g_signal_connect (info->interface, "handle-get-filenames", G_CALLBACK (on_handle_get_filenames), _get_client ());
-  g_signal_connect (info->interface, "handle-get-current-folder", G_CALLBACK (on_handle_get_current_folder), _get_client ());
-  g_signal_connect (info->interface, "handle-get-uri", G_CALLBACK (on_handle_get_uri), _get_client ());
-  g_signal_connect (info->interface, "handle-get-uris", G_CALLBACK (on_handle_get_uris), _get_client ());
-  g_signal_connect (info->interface, "handle-get-current-folder-uri", G_CALLBACK (on_handle_get_current_folder_uri), _get_client ());
+  g_signal_connect (info->interface, "handle-new", G_CALLBACK (on_handle_new), info);
+  g_signal_connect (info->interface, "handle-destroy", G_CALLBACK (on_handle_destroy), info);
+  g_signal_connect (info->interface, "handle-get-state", G_CALLBACK (on_handle_get_state), info);
+  g_signal_connect (info->interface, "handle-run", G_CALLBACK (on_handle_run), info);
+  g_signal_connect (info->interface, "handle-present", G_CALLBACK (on_handle_present), info);
+  g_signal_connect (info->interface, "handle-cancel-run", G_CALLBACK (on_handle_cancel_run), info);
+  g_signal_connect (info->interface, "handle-set-action", G_CALLBACK (on_handle_set_action), info);
+  g_signal_connect (info->interface, "handle-get-action", G_CALLBACK (on_handle_get_action), info);
+  g_signal_connect (info->interface, "handle-set-local-only", G_CALLBACK (on_handle_set_local_only), info);
+  g_signal_connect (info->interface, "handle-get-local-only", G_CALLBACK (on_handle_get_local_only), info);
+  g_signal_connect (info->interface, "handle-set-select-multiple", G_CALLBACK (on_handle_set_select_multiple), info);
+  g_signal_connect (info->interface, "handle-get-select-multiple", G_CALLBACK (on_handle_get_select_multiple), info);
+  g_signal_connect (info->interface, "handle-set-show-hidden", G_CALLBACK (on_handle_set_show_hidden), info);
+  g_signal_connect (info->interface, "handle-get-show-hidden", G_CALLBACK (on_handle_get_show_hidden), info);
+  g_signal_connect (info->interface, "handle-set-do-overwrite-confirmation", G_CALLBACK (on_handle_set_do_overwrite_confirmation), info);
+  g_signal_connect (info->interface, "handle-get-do-overwrite-confirmation", G_CALLBACK (on_handle_get_do_overwrite_confirmation), info);
+  g_signal_connect (info->interface, "handle-set-create-folders", G_CALLBACK (on_handle_set_create_folders), info);
+  g_signal_connect (info->interface, "handle-get-create-folders", G_CALLBACK (on_handle_get_create_folders), info);
+  g_signal_connect (info->interface, "handle-set-current-name", G_CALLBACK (on_handle_set_current_name), info);
+  g_signal_connect (info->interface, "handle-set-filename", G_CALLBACK (on_handle_set_filename), info);
+  g_signal_connect (info->interface, "handle-set-current-folder", G_CALLBACK (on_handle_set_current_folder), info);
+  g_signal_connect (info->interface, "handle-set-uri", G_CALLBACK (on_handle_set_uri), info);
+  g_signal_connect (info->interface, "handle-set-current-folder-uri", G_CALLBACK (on_handle_set_current_folder_uri), info);
+  g_signal_connect (info->interface, "handle-add-shortcut-folder", G_CALLBACK (on_handle_add_shortcut_folder), info);
+  g_signal_connect (info->interface, "handle-remove-shortcut-folder", G_CALLBACK (on_handle_remove_shortcut_folder), info);
+  g_signal_connect (info->interface, "handle-list-shortcut-folders", G_CALLBACK (on_handle_list_shortcut_folders), info);
+  g_signal_connect (info->interface, "handle-add-shortcut-folder-uri", G_CALLBACK (on_handle_add_shortcut_folder_uri), info);
+  g_signal_connect (info->interface, "handle-remove-shortcut-folder-uri", G_CALLBACK (on_handle_remove_shortcut_folder_uri), info);
+  g_signal_connect (info->interface, "handle-list-shortcut-folder-uris", G_CALLBACK (on_handle_list_shortcut_folder_uris), info);
+  g_signal_connect (info->interface, "handle-get-current-name", G_CALLBACK (on_handle_get_current_name), info);
+  g_signal_connect (info->interface, "handle-get-filename", G_CALLBACK (on_handle_get_filename), info);
+  g_signal_connect (info->interface, "handle-get-filenames", G_CALLBACK (on_handle_get_filenames), info);
+  g_signal_connect (info->interface, "handle-get-current-folder", G_CALLBACK (on_handle_get_current_folder), info);
+  g_signal_connect (info->interface, "handle-get-uri", G_CALLBACK (on_handle_get_uri), info);
+  g_signal_connect (info->interface, "handle-get-uris", G_CALLBACK (on_handle_get_uris), info);
+  g_signal_connect (info->interface, "handle-get-current-folder-uri", G_CALLBACK (on_handle_get_current_folder_uri), info);
 
   if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (info->interface),
                                          connection,
@@ -1193,6 +1252,7 @@ sfcd_dbus_info_new ()
 
   i->owner_id  = 0;
   i->interface = NULL;
+  i->client = NULL;
 
   return i;
 }
@@ -1216,6 +1276,8 @@ sfcd_dbus_wrapper_dbus_init ()
                                    sfcd_dbus_wrapper_dbus_shutdown);
 
   g_assert (info->owner_id != 0);
+  
+  info->client = _get_client ();
 
   return info;
 }
@@ -1230,6 +1292,9 @@ sfcd_dbus_wrapper_dbus_shutdown (gpointer data)
   // Clean up server
   g_bus_unown_name (info->owner_id);
   //FIXME find how to do this with my new interface g_dbus_node_info_unref (info->introspection_data);
+  
+  //TODO notify client of interface shutdown
+  info->client = NULL;
 
   g_free (info);
 }

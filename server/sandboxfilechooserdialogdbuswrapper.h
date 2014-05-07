@@ -20,8 +20,9 @@
 
 
 typedef struct {
-  guint             owner_id;
-  SfcdDbusWrapper  *interface;
+  guint                owner_id;
+  SfcdDbusWrapper     *interface;
+  SandboxUtilsClient  *client;
 } SfcdDbusWrapperInfo;
 
 
