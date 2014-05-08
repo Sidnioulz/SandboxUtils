@@ -22,3 +22,4 @@
 - XDG folders work
 - All exposed FS can be made read-write, kept consist
 - Extend to use/cases, discuss with DE on integration
+- Replace INT by ENUM over DBus and in signal marshallers?
