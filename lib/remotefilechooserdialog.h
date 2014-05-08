@@ -52,7 +52,8 @@ struct _RemoteFileChooserDialog
 struct _RemoteFileChooserDialogClass
 {
   SandboxFileChooserDialogClass parent_class;
-  
+
+  GHashTable *instances;
   GDBusProxy *proxy;
 };
 

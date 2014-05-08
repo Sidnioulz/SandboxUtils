@@ -100,6 +100,77 @@ static gchar *              rfcd_get_uri                       (SandboxFileChoos
 static GSList *             rfcd_get_uris                      (SandboxFileChooserDialog *, GError **);
 static gchar *              rfcd_get_current_folder_uri        (SandboxFileChooserDialog *, GError **);
 
+static SandboxFileChooserDialog *
+_rfcd_class_lookup (RemoteFileChooserDialogClass  *klass,
+                    const gchar                   *dialog_id)
+{
+  SandboxFileChooserDialog *sfcd = NULL;
+
+  g_return_val_if_fail (klass != NULL, NULL);
+  g_return_val_if_fail (dialog_id != NULL, NULL);
+
+  sfcd = g_hash_table_lookup (klass->instances, dialog_id);
+
+	if (sfcd == NULL)
+	{
+	  syslog (LOG_WARNING,
+	          "RemoteFileChooserDialogClass._Lookup: dialog '%s' was not found.\n",
+	          dialog_id);
+	}
+
+  return sfcd;
+}
+
+static void
+_rfcd_class_on_response (SfcdDbusWrapper *proxy,
+                         const gchar     *dialog_id,
+                         gint             response_id,
+                         gint             state,
+                         gpointer         user_data)
+{
+  RemoteFileChooserDialogClass *klass = user_data;
+  g_return_if_fail (dialog_id != NULL);
+  g_return_if_fail (klass != NULL);
+
+  SandboxFileChooserDialog *sfcd = _rfcd_class_lookup (klass, dialog_id);
+  SandboxFileChooserDialogClass *sfcd_class = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
+  g_return_if_fail (sfcd != NULL);
+  g_return_if_fail (sfcd_class != NULL);
+
+  syslog (LOG_DEBUG, "RemoteFileChooserDialogClass.OnResponse: dialog '%s' will now emit a 'response' signal with response id %d and state %d.\n",
+          dialog_id, response_id, state);
+
+  g_signal_emit (sfcd,
+                 sfcd_class->response_signal,
+                 0,
+                 response_id,
+                 state);
+}
+
+static void
+_rfcd_class_on_destroy (SfcdDbusWrapper *proxy,
+                        const gchar     *dialog_id,
+                        gpointer         user_data)
+{
+  RemoteFileChooserDialogClass *klass = user_data;
+  g_return_if_fail (dialog_id != NULL);
+  g_return_if_fail (klass != NULL);
+
+  SandboxFileChooserDialog *sfcd = _rfcd_class_lookup (klass, dialog_id);
+  SandboxFileChooserDialogClass *sfcd_class = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
+  g_return_if_fail (sfcd != NULL);
+  g_return_if_fail (sfcd_class != NULL);
+
+  syslog (LOG_DEBUG, "RemoteFileChooserDialogClass.OnDestroy: dialog '%s' will not emit a 'destroy' signal.\n",
+          dialog_id);
+
+  // No need to do that, destroy it directly and it'll happen! Already destroyed on other side btw.
+  //TODO ^ FIXME check rfcd_destroy
+  g_signal_emit (sfcd,
+                 sfcd_class->destroy_signal,
+                 0);
+}
+
 static gboolean
 _rfcd_class_proxy_init (RemoteFileChooserDialogClass *klass)
 {
@@ -123,8 +194,13 @@ _rfcd_class_proxy_init (RemoteFileChooserDialogClass *klass)
 
     return FALSE;
   }
+  else
+  {
+    g_signal_connect (SFCD_DBUS_WRAPPER_ (klass->proxy), "destroy", (GCallback) _rfcd_class_on_destroy, klass);
+    g_signal_connect (SFCD_DBUS_WRAPPER_ (klass->proxy), "response", (GCallback) _rfcd_class_on_response, klass);
 
-  return TRUE;
+    return TRUE;
+  }
 }
 
 static void
@@ -297,6 +373,10 @@ rfcd_new_valist (const gchar          *title,
 
     syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
             rfcd->priv->remote_id, title);
+
+
+    RemoteFileChooserDialogClass *klass = REMOTE_FILE_CHOOSER_DIALOG_GET_CLASS (rfcd);
+    g_hash_table_insert (klass->instances, rfcd->priv->remote_id, SANDBOX_FILE_CHOOSER_DIALOG (rfcd));
   }
 
   return SANDBOX_FILE_CHOOSER_DIALOG (rfcd);
@@ -347,11 +427,15 @@ rfcd_new (const gchar          *title,
   return rfcd;
 }
 
+//FIXME need another destroy that does not emit signals, but internal
+//FIXME only use that internal destroy when receiving a destroy signal
+
 static void
 rfcd_destroy (SandboxFileChooserDialog *sfcd)
 {
+  g_return_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (sfcd));
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
-  g_return_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self));
+  RemoteFileChooserDialogClass *klass = REMOTE_FILE_CHOOSER_DIALOG_GET_CLASS (self);
 
   GError *error = NULL;
   if (!sfcd_dbus_wrapper__call_destroy_sync (_rfcd_get_proxy (self),
@@ -361,12 +445,15 @@ rfcd_destroy (SandboxFileChooserDialog *sfcd)
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Destroy: error when destroying dialog %s -- %s",
             sfcd_get_id (sfcd), g_error_get_message (error));
+    g_error_free (error);
   }
   else
   {
     syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
               sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
   }
+
+  g_hash_table_remove (klass->instances, self->priv->remote_id);
 
   g_object_unref (self);
 }
@@ -387,6 +474,8 @@ rfcd_get_state (SandboxFileChooserDialog *sfcd)
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Destroy: error when destroying dialog %s -- %s",
             sfcd_get_id (sfcd), g_error_get_message (error));
+    g_error_free (error);
+
   }
 
   // In lack of a better option...
@@ -800,6 +889,15 @@ rfcd_get_filename (SandboxFileChooserDialog *sfcd,
 
   gchar *name = NULL;
 
+  if (!sfcd_dbus_wrapper__call_get_filename_sync (_rfcd_get_proxy (self),
+                                                  self->priv->remote_id,
+                                                  &name,
+                                                  NULL,
+                                                  error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.Present: error when running dialog %s -- %s",
+            sfcd_get_id (sfcd), g_error_get_message (*error));
+  }
 
   return name;
 }
@@ -870,7 +968,11 @@ rfcd_class_init (RemoteFileChooserDialogClass *klass)
   SandboxFileChooserDialogClass *sfcd_class = SANDBOX_FILE_CHOOSER_DIALOG_CLASS (klass);
   GObjectClass  *g_object_class = G_OBJECT_CLASS(klass);
 
-  //FIXME maybe reintroduce signals here?
+  /* Needed to find instances when receiving signals from the proxy */
+  klass->instances = g_hash_table_new_full (g_str_hash,
+                                            g_str_equal,
+                                            g_free,
+                                            NULL);
 
   /* Hook finalization functions */
   g_object_class->dispose = rfcd_dispose; /* instance destructor, reverse of init */

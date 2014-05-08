@@ -127,6 +127,8 @@ lfcd_dispose (GObject* object)
   // Clean up signal handlers and loop
   g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->close_signal,
                                         0, NULL, NULL, NULL);
+  g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->confirm_overwrite_signal,
+                                        0, NULL, NULL, NULL);
   g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->destroy_signal,
                                         0, NULL, NULL, NULL);
   g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->hide_signal,
@@ -174,6 +176,19 @@ _lfcd_on_show (SandboxFileChooserDialog *sfcd,
   g_signal_emit (sfcd,
                  klass->show_signal,
                  0);
+}
+
+static GtkFileChooserConfirmation
+_lfcd_on_confirm_overwrite (SandboxFileChooserDialog *sfcd,
+                            gpointer ignore)
+{
+  SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
+  g_signal_emit (sfcd,
+                 klass->confirm_overwrite_signal,
+                 0);
+
+  //FIXME the only proper thing to do here is a GCondWait until a decision has been made.
+  return GTK_FILE_CHOOSER_CONFIRMATION_SELECT_AGAIN;
 }
 
 static GtkWidget *
@@ -267,6 +282,7 @@ lfcd_new_valist (const gchar          *title,
   SandboxFileChooserDialog *sfcd = SANDBOX_FILE_CHOOSER_DIALOG (lfcd);
   g_signal_connect_swapped (lfcd->priv->dialog, "hide", (GCallback) _lfcd_on_hide, sfcd);
   g_signal_connect_swapped (lfcd->priv->dialog, "show", (GCallback) _lfcd_on_show, sfcd);
+  g_signal_connect_swapped (lfcd->priv->dialog, "confirm-overwrite", (GCallback) _lfcd_on_confirm_overwrite, sfcd);
   
   //TODO manage close
 

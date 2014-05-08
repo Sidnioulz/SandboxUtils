@@ -113,7 +113,7 @@ struct _SandboxFileChooserDialog
 struct _SandboxFileChooserDialogClass
 {
   GObjectClass parent_class;
-  
+
   /* Pointers to virtual methods implemented by local and remote dialogs */
   //TODO get/set_dialog_title
   void                 (*destroy)                       (SandboxFileChooserDialog *);
@@ -160,6 +160,7 @@ struct _SandboxFileChooserDialogClass
   /* Class signals */
   //TODO whole signal thing
   guint close_signal;
+  guint confirm_overwrite_signal;
   guint destroy_signal;
   guint hide_signal;
   guint response_signal;
@@ -352,6 +353,14 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
 /**
  * Proposed API changes
  * _____________________________________________________________________________
+ * API CHANGE: Response ID to influence state
+ *
+ * Define response IDs that allow a data retrieval state. Enforce stock
+ * labels (that are HIG-compliant) for these response IDs to avoid the user
+ * cancelling and the app still getting access.
+ *
+ *   gtk_file_chooser_run ()
+ * _____________________________________________________________________________
  * API CHANGE: On-the-fly filename transformation widget
  *
  * The method to get the currently typed name needs to be changed to a method of
@@ -443,11 +452,6 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
 //GtkFileChooserConfirmation	confirm-overwrite	Run Last    // TODO implement
 //void	update-preview	Run Last                            // TODO new architecture for widget preview
 
-//void	close	Action
-//void  close GtkDialog
-//void	response	Run Last
-//void  response (GtkDialog *dialog, gint response_id, gpointer user_data)
-
 /* 
 
 The “focus-out-event” signal
@@ -467,7 +471,6 @@ user_function (GtkWidget *widget,
 The ::window-state-event will be emitted when the state of the toplevel window associated to the widget changes.
 
 To receive this signal the GdkWindow associated to the widget needs to enable the GDK_STRUCTURE_MASK mask. GDK will enable this mask automatically for all new windows.
-
 
 */
 
