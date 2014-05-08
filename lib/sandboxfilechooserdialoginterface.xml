@@ -20,14 +20,21 @@
 		 <method name='Run'>
 			 <arg type='s' name='dialog_id' direction='in' />
 		 </method>
-     <signal name='Destroy'>
+		 <signal name='ConfirmOverwrite'>
 			 <arg type='s' name='dialog_id' />
-     </signal>
-     <signal name='Response'>
+		 </signal>
+		 <method name='ConfirmOverwriteCallbackResponse'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='i' name='overwrite_decision' direction='out' />
+		 </method>
+		 <signal name='Destroy'>
 			 <arg type='s' name='dialog_id' />
-       <arg type='i' name='response_id' />
-       <arg type='i' name='state' />
-     </signal>
+		 </signal>
+		 <signal name='Response'>
+			 <arg type='s' name='dialog_id' />
+			 <arg type='i' name='response_id' />
+			 <arg type='i' name='state' />
+		 </signal>
 		 <method name='Present'>
 			 <arg type='s' name='dialog_id' direction='in' />
 		 </method>
