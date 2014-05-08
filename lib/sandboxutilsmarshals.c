@@ -90,7 +90,44 @@ sandboxutils_marshal_VOID__INT_INT (GClosure     *closure,
             data2);
 }
 
-/* VOID:STRING,INT,INT,BOOLEAN (sandboxutilsmarshals.list:4) */
+/* INT:VOID (sandboxutilsmarshals.list:4) */
+void
+sandboxutils_marshal_INT__VOID (GClosure     *closure,
+                                GValue       *return_value G_GNUC_UNUSED,
+                                guint         n_param_values,
+                                const GValue *param_values,
+                                gpointer      invocation_hint G_GNUC_UNUSED,
+                                gpointer      marshal_data)
+{
+  typedef gint (*GMarshalFunc_INT__VOID) (gpointer     data1,
+                                          gpointer     data2);
+  register GMarshalFunc_INT__VOID callback;
+  register GCClosure *cc = (GCClosure*) closure;
+  register gpointer data1, data2;
+  gint v_return;
+
+  g_return_if_fail (return_value != NULL);
+  g_return_if_fail (n_param_values == 1);
+
+  if (G_CCLOSURE_SWAP_DATA (closure))
+    {
+      data1 = closure->data;
+      data2 = g_value_peek_pointer (param_values + 0);
+    }
+  else
+    {
+      data1 = g_value_peek_pointer (param_values + 0);
+      data2 = closure->data;
+    }
+  callback = (GMarshalFunc_INT__VOID) (marshal_data ? marshal_data : cc->callback);
+
+  v_return = callback (data1,
+                       data2);
+
+  g_value_set_int (return_value, v_return);
+}
+
+/* VOID:STRING,INT,INT,BOOLEAN (sandboxutilsmarshals.list:5) */
 void
 sandboxutils_marshal_VOID__STRING_INT_INT_BOOLEAN (GClosure     *closure,
                                                    GValue       *return_value G_GNUC_UNUSED,

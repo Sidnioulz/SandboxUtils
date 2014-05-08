@@ -20,7 +20,15 @@ extern void sandboxutils_marshal_VOID__INT_INT (GClosure     *closure,
                                                 gpointer      invocation_hint,
                                                 gpointer      marshal_data);
 
-/* VOID:STRING,INT,INT,BOOLEAN (sandboxutilsmarshals.list:4) */
+/* INT:VOID (sandboxutilsmarshals.list:4) */
+extern void sandboxutils_marshal_INT__VOID (GClosure     *closure,
+                                            GValue       *return_value,
+                                            guint         n_param_values,
+                                            const GValue *param_values,
+                                            gpointer      invocation_hint,
+                                            gpointer      marshal_data);
+
+/* VOID:STRING,INT,INT,BOOLEAN (sandboxutilsmarshals.list:5) */
 extern void sandboxutils_marshal_VOID__STRING_INT_INT_BOOLEAN (GClosure     *closure,
                                                                GValue       *return_value,
                                                                guint         n_param_values,
