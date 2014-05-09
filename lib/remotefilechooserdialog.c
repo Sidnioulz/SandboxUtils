@@ -129,13 +129,8 @@ _rfcd_class_on_response (SfcdDbusWrapper *proxy,
                          gpointer         user_data)
 {
   RemoteFileChooserDialogClass *klass = user_data;
-  g_return_if_fail (dialog_id != NULL);
-  g_return_if_fail (klass != NULL);
-
   SandboxFileChooserDialog *sfcd = _rfcd_class_lookup (klass, dialog_id);
   SandboxFileChooserDialogClass *sfcd_class = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
-  g_return_if_fail (sfcd != NULL);
-  g_return_if_fail (sfcd_class != NULL);
 
   syslog (LOG_DEBUG, "RemoteFileChooserDialogClass.OnResponse: dialog '%s' will now emit a 'response' signal with response id %d and state %d.\n",
           dialog_id, response_id, state);
@@ -437,6 +432,10 @@ rfcd_destroy (SandboxFileChooserDialog *sfcd)
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   RemoteFileChooserDialogClass *klass = REMOTE_FILE_CHOOSER_DIALOG_GET_CLASS (self);
 
+// TODO: inform that no signal shall be sent back or disconnect locally
+
+  g_hash_table_remove (klass->instances, self->priv->remote_id);
+
   GError *error = NULL;
   if (!sfcd_dbus_wrapper__call_destroy_sync (_rfcd_get_proxy (self),
                                              self->priv->remote_id,
@@ -452,8 +451,6 @@ rfcd_destroy (SandboxFileChooserDialog *sfcd)
     syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
               sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
   }
-
-  g_hash_table_remove (klass->instances, self->priv->remote_id);
 
   g_object_unref (self);
 }
@@ -699,6 +696,16 @@ rfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *sfcd,
 {
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
+
+  if (!sfcd_dbus_wrapper__call_set_do_overwrite_confirmation_sync (_rfcd_get_proxy (self),
+                                                                   self->priv->remote_id,
+                                                                   do_overwrite_confirmation,
+                                                                   NULL,
+                                                                   error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetDoOverwriteConfirmation: error when modifying dialog %s -- %s",
+            sfcd_get_id (sfcd), g_error_get_message (*error));
+  }
 
 }
 

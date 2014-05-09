@@ -18,11 +18,10 @@
 #include "sandboxfilechooserdialog.h"
 #include "sandboxfilechooserdialogdbusobject.h"
 
-
 typedef struct {
-  guint                owner_id;
-  SfcdDbusWrapper     *interface;
-  SandboxUtilsClient  *client;
+  guint                  owner_id;
+  SfcdDbusWrapper       *interface;
+  SandboxUtilsClient    *client;
 } SfcdDbusWrapperInfo;
 
 

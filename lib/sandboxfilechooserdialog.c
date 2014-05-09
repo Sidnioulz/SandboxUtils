@@ -152,82 +152,6 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
 	                G_TYPE_NONE, 0);
 
   /**
-   * SandboxFileChooserDialog::confirm-overwrite:
-   * @dialog: the dialog on which the signal is emitted
-   *
-   * This signal gets emitted whenever it is appropriate to present a
-   * confirmation dialog when the user has selected a file name that
-   * already exists.  The signal only gets emitted when the file
-   * dialog is in %GTK_FILE_CHOOSER_ACTION_SAVE mode.
-   *
-   * Most applications just need to call the
-   * sfcd_set_do_overwrite_confirmation() function, and
-   * they will automatically get a stock confirmation dialog.
-   * Applications which need to customize this behavior should do
-   * that, and also connect to the #SandboxFileChooserDialog::confirm-overwrite
-   * signal.
-   *
-   * A signal handler for this signal must return a
-   * #GtkFileChooserConfirmation value, which indicates the action to
-   * take.  If the handler determines that the user wants to select a
-   * different filename, it should return
-   * %GTK_FILE_CHOOSER_CONFIRMATION_SELECT_AGAIN.  If it determines
-   * that the user is satisfied with his choice of file name, it
-   * should return %GTK_FILE_CHOOSER_CONFIRMATION_ACCEPT_FILENAME.
-   * On the other hand, if it determines that the stock confirmation
-   * dialog should be used, it should return
-   * %GTK_FILE_CHOOSER_CONFIRMATION_CONFIRM. The following example
-   * illustrates this.
-   * <example id="gtkfilechooser-confirmation">
-   * <title>Custom confirmation</title>
-   * <programlisting>
-   * FIXME should use GErrors in sfcd_*
-   * static GtkFileChooserConfirmation
-   * confirm_overwrite_callback (SandboxFileChooserDialog *dialog, gpointer data)
-   * {
-   *   char *uri;
-   *
-   *   uri = sfcd_get_uri (dialog);
-   *
-   *   if (is_uri_read_only (uri))
-   *     {
-   *       if (user_wants_to_replace_read_only_file (uri))
-   *         return GTK_FILE_CHOOSER_CONFIRMATION_ACCEPT_FILENAME;
-   *       else
-   *         return GTK_FILE_CHOOSER_CONFIRMATION_SELECT_AGAIN;
-   *     } else
-   *       return GTK_FILE_CHOOSER_CONFIRMATION_CONFIRM; // fall back to the default dialog
-   * }
-   *
-   * ...
-   *
-   * FIXME should use GErrors in sfcd_*
-   * dialog = sfcd_new (...);
-   *
-   * sfcd_set_do_overwrite_confirmation (dialog, TRUE);
-   * g_signal_connect (dialog, "confirm-overwrite",
-   *                   G_CALLBACK (confirm_overwrite_callback), NULL);
-   *
-   * if (sfcd_run (dialog) == GTK_RESPONSE_ACCEPT)
-   *         save_to_file (sfcd_get_filename (dialog);
-   *
-   * sfcd_destroy (dialog);
-   * </programlisting>
-   * </example>
-   *
-   * Returns: a #GtkFileChooserConfirmation value that indicates which
-   *  action to take after emitting the signal.
-   */
-  klass->confirm_overwrite_signal  =
-    g_signal_new ("confirm-overwrite",
-	                G_OBJECT_CLASS_TYPE (g_object_class),
-	                G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-	                0,
-	                NULL, NULL,
-                  sandboxutils_marshal_VOID__VOID,
-	                G_TYPE_NONE, 0);
-
-  /**
    * SandboxFileChooserDialog::destroy:
    * @dialog: the dialog on which the signal is emitted
    *
@@ -924,16 +848,10 @@ sfcd_get_show_hidden (SandboxFileChooserDialog *self,
  * confirmation dialog if the user types a file name that already exists. This
  * is %FALSE by default.
  *
- * If set to %TRUE, the @dialog will emit the
- * #GtkFileChooser::confirm-overwrite signal when appropriate.
- *
- * If all you need is the stock confirmation dialog, set this property to %TRUE.
- * You can override the way confirmation is done by actually handling the
- * #GtkFileChooser::confirm-overwrite signal; please refer to its documentation
- * for the details. Please mind that you are only granted access to the actual
- * filename or uri currently selected by the user. You need to use this API to
- * obtain a new filename or uri that does not override an existing file (see
- * sfcd_NOT_IMPLEMENTED_YET(). TODO
+ * If set to %TRUE, the @dialog will show a stock confirmation dialog. There is
+ * currently no way to override this dialog, though customization will be
+ * allowed in the future, including proposing an alternative name based on the
+ * autocompletion plugin.
  *
  * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
  * gtk_file_chooser_set_do_overwrite_confirmation() in the GTK+ API. Do remember

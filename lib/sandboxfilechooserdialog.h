@@ -160,7 +160,6 @@ struct _SandboxFileChooserDialogClass
   /* Class signals */
   //TODO whole signal thing
   guint close_signal;
-  guint confirm_overwrite_signal;
   guint destroy_signal;
   guint hide_signal;
   guint response_signal;
@@ -449,7 +448,7 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
 //       to handle it as a modal child of the client
 //
 // TODO check which signals are allowed
-//GtkFileChooserConfirmation	confirm-overwrite	Run Last    // TODO implement
+//GtkFileChooserConfirmation	confirm-overwrite	Run Last    // TODO implement differently
 //void	update-preview	Run Last                            // TODO new architecture for widget preview
 
 /* 

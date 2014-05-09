@@ -20,13 +20,6 @@
 		 <method name='Run'>
 			 <arg type='s' name='dialog_id' direction='in' />
 		 </method>
-		 <signal name='ConfirmOverwrite'>
-			 <arg type='s' name='dialog_id' />
-		 </signal>
-		 <method name='ConfirmOverwriteCallbackResponse'>
-			 <arg type='s' name='dialog_id' direction='in' />
-			 <arg type='i' name='overwrite_decision' direction='out' />
-		 </method>
 		 <signal name='Destroy'>
 			 <arg type='s' name='dialog_id' />
 		 </signal>
