@@ -194,6 +194,13 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
    * delete event, or the application programmer calls gtk_dialog_response().
    * On a delete event, the response ID is #GTK_RESPONSE_DELETE_EVENT.
    * Otherwise, it depends on which action widget was clicked.
+   *
+   * Note that the state of the @dialog will depend on whether the response id
+   * translates as the user accepting an operation to take place or not. The
+   * GTK+ API defines %GTK_RESPONSE_ACCEPT, %GTK_RESPONSE_OK, %GTK_RESPONSE_YES
+   * and %GTK_RESPONSE_ACCEPT as meaning user acceptance. In SandboxUtils, these
+   * response ids can only be used for buttons whose label is included into the
+   * acceptance-meaning labels.
    */
   klass->response_signal  =
     g_signal_new ("response",
@@ -552,7 +559,7 @@ _sfcd_entry_sanity_check (SandboxFileChooserDialog *self,
  * Note that if the dialog was destroyed, you will never hear from it again. If
  * you kept an extra reference to the dialog via g_object_ref(), make sure to
  * also connect to #SandboxFileChooserDialog::destroy and to drop that reference
- * when receiving this signal (with g_object_unref()). 
+ * when receiving this signal (with g_object_unref()).
  *
  * This method can be called from the %SFCD_CONFIGURATION or %SFCD_DATA_RETRIEVAL
  * states. It is roughly to gtk_dialog_run() in the GTK+ API. Do remember to

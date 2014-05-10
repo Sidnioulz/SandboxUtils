@@ -53,6 +53,49 @@ typedef enum {
   SFCD_LAST_STATE      = 4,
 } SfcdState;
 
+static const char *accept_response_labels[] =
+{
+  "Accept",
+  "Next",
+  "Ok",
+  "Choose",
+  "Confirm",
+  "Pick",
+  "Yes",
+  "Apply",
+  "Add",
+  "Select",
+  "Add",
+  "Save",
+  "Save as...",
+  "Save Copy",
+  "Export",
+  "Create",
+  "Send",
+  "Upload",
+  "Rename",
+  "Write",
+  "Merge",
+  "Extract",
+  "Open",
+  "Open as...",
+  "Open Copy",
+  "Open Read-Only",
+  "Import",
+  "Print",
+  "Read",
+  "View",
+  "Preview",
+  "Load",
+  "Download",
+  "Play",
+  "Enqueue",
+  "Attach",
+  "Extract",
+  "Compare"
+};
+
+
 /**
  * SfcdStatePrintable:
  * An array of string descriptions for the states of a #SandboxFileChooserDialog.
@@ -359,6 +402,11 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
  * cancelling and the app still getting access.
  *
  *   gtk_file_chooser_run ()
+ * _____________________________________________________________________________
+ * API CHANGE: Select at least X items
+ *
+ * Add flag to make sure the user selects multiple items, if needed for a diff
+ * like app.
  * _____________________________________________________________________________
  * API CHANGE: On-the-fly filename transformation widget
  *

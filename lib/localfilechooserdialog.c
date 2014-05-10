@@ -531,6 +531,15 @@ _lfcd_entry_sanity_check (LocalFileChooserDialog    *self,
 
 
 /* RUNNING METHODS */
+static gboolean
+_lfcd_is_stock_accept_response_id (int response_id)
+{
+  return (response_id == GTK_RESPONSE_ACCEPT
+	  || response_id == GTK_RESPONSE_OK
+	  || response_id == GTK_RESPONSE_YES
+	  || response_id == GTK_RESPONSE_APPLY);
+}
+
 /* Struct to transfer data to the running function and its handlers */
 typedef struct _LfcdRunFuncData{
   LocalFileChooserDialog     *lfcd;
@@ -654,12 +663,11 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     // Client can now query and destroy the dialog -- hide it in the meantime
     gtk_widget_hide (self->priv->dialog);
 
-    // According to the doc, could happen if dialog was destroyed. Ours can only be
-    // destroyed via a delete-event though, so NONE shouldn't mean it's destroyed
-    if (d->response_id == GTK_RESPONSE_NONE)
+    // Negative answers should not lead to data retrieval
+    if (!_lfcd_is_stock_accept_response_id (d->response_id))
     {
       syslog (LOG_DEBUG,
-              "SandboxFileChooserDialog._RunFunc: dialog '%s' ('%s') ran and returned no response, will return to '%s' state.\n",
+              "SandboxFileChooserDialog._RunFunc: dialog '%s' ('%s') ran and the user picked a negative response, returning to '%s' state.\n",
               sfcd_get_id (sfcd),
               gtk_window_get_title (GTK_WINDOW (self->priv->dialog)),
               SfcdStatePrintable [SFCD_CONFIGURATION]);
