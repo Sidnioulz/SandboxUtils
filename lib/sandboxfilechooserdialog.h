@@ -159,7 +159,6 @@ struct _SandboxFileChooserDialogClass
 
   /* Class signals */
   //TODO whole signal thing
-  guint close_signal;
   guint destroy_signal;
   guint hide_signal;
   guint response_signal;

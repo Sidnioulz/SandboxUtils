@@ -126,8 +126,6 @@ lfcd_dispose (GObject* object)
   SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
 
   // Clean up signal handlers and loop
-  g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->close_signal,
-                                        0, NULL, NULL, NULL);
   g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->destroy_signal,
                                         0, NULL, NULL, NULL);
   g_signal_handlers_disconnect_matched (self, G_SIGNAL_MATCH_ID, klass->hide_signal,

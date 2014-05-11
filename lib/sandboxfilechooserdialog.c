@@ -222,26 +222,6 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
   GObjectClass  *g_object_class = G_OBJECT_CLASS(klass);
 
   /**
-   * SandboxFileChooserDialog::close:
-   * @dialog: the dialog on which the signal is emitted
-   *
-   * The ::close signal is a
-   * <link linkend="keybinding-signals">keybinding signal</link>
-   * which gets emitted when the user uses a keybinding to close
-   * the @dialog.
-   *
-   * The default binding for this signal is the Escape key.
-   */
-  klass->close_signal  =
-    g_signal_new ("close",
-	                G_OBJECT_CLASS_TYPE (g_object_class),
-	                G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-	                0,
-	                NULL, NULL,
-                  sandboxutils_marshal_VOID__VOID,
-	                G_TYPE_NONE, 0);
-
-  /**
    * SandboxFileChooserDialog::destroy:
    * @dialog: the dialog on which the signal is emitted
    *
