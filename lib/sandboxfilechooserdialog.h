@@ -53,49 +53,6 @@ typedef enum {
   SFCD_LAST_STATE      = 4,
 } SfcdState;
 
-static const char *accept_response_labels[] =
-{
-  "Accept",
-  "Next",
-  "Ok",
-  "Choose",
-  "Confirm",
-  "Pick",
-  "Yes",
-  "Apply",
-  "Add",
-  "Select",
-  "Add",
-  "Save",
-  "Save as...",
-  "Save Copy",
-  "Export",
-  "Create",
-  "Send",
-  "Upload",
-  "Rename",
-  "Write",
-  "Merge",
-  "Extract",
-  "Open",
-  "Open as...",
-  "Open Copy",
-  "Open Read-Only",
-  "Import",
-  "Print",
-  "Read",
-  "View",
-  "Preview",
-  "Load",
-  "Download",
-  "Play",
-  "Enqueue",
-  "Attach",
-  "Extract",
-  "Compare"
-};
-
-
 /**
  * SfcdStatePrintable:
  * An array of string descriptions for the states of a #SandboxFileChooserDialog.
@@ -210,6 +167,8 @@ struct _SandboxFileChooserDialogClass
 };
 
 GType sfcd_get_type (void);
+
+gboolean sfcd_is_accept_label (const gchar *label);
 
 /* GENERIC METHODS */
 SandboxFileChooserDialog *

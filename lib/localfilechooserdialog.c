@@ -176,33 +176,13 @@ _lfcd_on_show (SandboxFileChooserDialog *sfcd,
                  0);
 }
 
-static GtkWidget *
-gtk_file_chooser_dialog_new_valist (const gchar          *title,
-				                            GtkWindow            *parent,
-				                            GtkFileChooserAction  action,
-				                            const gchar          *first_button_text,
-				                            va_list               varargs)
+static gboolean
+_lfcd_is_stock_accept_response_id (int response_id)
 {
-  GtkWidget *result;
-  const char *button_text = first_button_text;
-  gint response_id;
-
-  result = g_object_new (GTK_TYPE_FILE_CHOOSER_DIALOG,
-			 "title", title,
-			 "action", action,
-			 NULL);
-
-  if (parent)
-    gtk_window_set_transient_for (GTK_WINDOW (result), parent);
-
-  while (button_text)
-    {
-      response_id = va_arg (varargs, gint);
-      gtk_dialog_add_button (GTK_DIALOG (result), button_text, response_id);
-      button_text = va_arg (varargs, const gchar *);
-    }
-
-  return result;
+  return (response_id == GTK_RESPONSE_ACCEPT
+	  || response_id == GTK_RESPONSE_OK
+	  || response_id == GTK_RESPONSE_YES
+	  || response_id == GTK_RESPONSE_APPLY);
 }
 
 /**
@@ -249,11 +229,24 @@ lfcd_new_valist (const gchar          *title,
   LocalFileChooserDialog *lfcd = g_object_new (LOCAL_TYPE_FILE_CHOOSER_DIALOG, NULL);
   g_return_val_if_fail (lfcd != NULL, NULL);
 
-  lfcd->priv->dialog = gtk_file_chooser_dialog_new_valist (title,
-                                                          parent,
-                                                          action,
-                                                          first_button_text,
-                                                          varargs);
+  lfcd->priv->dialog = gtk_file_chooser_dialog_new (title,
+                                                    parent,
+                                                    action,
+                                                    NULL, NULL);
+
+  const char *button_text = first_button_text;
+  gint response_id;
+
+  while (button_text)
+  {
+    response_id = va_arg (varargs, gint);
+    if (!_lfcd_is_stock_accept_response_id (response_id) || sfcd_is_accept_label (button_text))
+      gtk_dialog_add_button (GTK_DIALOG (lfcd->priv->dialog), button_text, response_id);
+    else
+      syslog (LOG_CRIT, "SandboxFileChooserDialog.New: dialog '%s' will not contain button '%s':'%d' for security reasons (acceptance state with label not known to convey acceptance meaning). If you think this is a bug, please report it indicating the application used and your current locale settings.",
+              lfcd->priv->id, button_text, response_id);
+    button_text = va_arg (varargs, const gchar *);
+  }
 
   g_object_ref_sink (lfcd->priv->dialog);
 
@@ -334,7 +327,11 @@ lfcd_new_variant (const gchar          *title,
     GVariant *value;
 
     g_variant_get (item, "{sv}", &key, &value);
-    gtk_dialog_add_button (GTK_DIALOG (lfcd->priv->dialog), key, g_variant_get_int32 (value));
+    if (!_lfcd_is_stock_accept_response_id (g_variant_get_int32 (value)) || sfcd_is_accept_label (key))
+      gtk_dialog_add_button (GTK_DIALOG (lfcd->priv->dialog), key, g_variant_get_int32 (value));
+    else
+      syslog (LOG_CRIT, "SandboxFileChooserDialog.New: dialog '%s' will not contain button '%s':'%d' for security reasons (acceptance state with label not known to convey acceptance meaning). If you think this is a bug, please report it indicating the application used and your current locale settings.",
+              lfcd->priv->id, key, g_variant_get_int32 (value));
   }
 
   return SANDBOX_FILE_CHOOSER_DIALOG (lfcd);
@@ -531,15 +528,6 @@ _lfcd_entry_sanity_check (LocalFileChooserDialog    *self,
 
 
 /* RUNNING METHODS */
-static gboolean
-_lfcd_is_stock_accept_response_id (int response_id)
-{
-  return (response_id == GTK_RESPONSE_ACCEPT
-	  || response_id == GTK_RESPONSE_OK
-	  || response_id == GTK_RESPONSE_YES
-	  || response_id == GTK_RESPONSE_APPLY);
-}
-
 /* Struct to transfer data to the running function and its handlers */
 typedef struct _LfcdRunFuncData{
   LocalFileChooserDialog     *lfcd;

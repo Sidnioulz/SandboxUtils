@@ -109,6 +109,96 @@ void __temp_sandboxutils_init (gboolean use_local)
   __temp_init = use_local;
 }
 
+/**
+ * SfcdAcceptLabels:
+ * An array of button labels that are considered to correspond to an action
+ * indicating user acceptance. If you attempt to add a button to a
+ * #SandboxFileChooserDialog with a response id among %GTK_RESPONSE_ACCEPT, 
+ * %GTK_RESPONSE_OK, %GTK_RESPONSE_YES or %GTK_RESPONSE_APPLY and with a button
+ * not contained in %SfcdAcceptLabels, it will be rejected and will not appear.
+ * This is to prevent malicious applications from tricking a user into accepting
+ * a file selection when they cancel an undesired dialog.
+ */
+const gchar *SfcdAcceptLabels[] =
+{
+  "Accept",
+  "Next",
+  "Ok",
+  "Choose",
+  "Confirm",
+  "Pick",
+  "Yes",
+  "Apply",
+  "Select",
+  "Add",
+  "Append",
+  "Save",
+  "Save as...",
+  "Save Copy",
+  "Export",
+  "Create",
+  "Send",
+  "Upload",
+  "Rename",
+  "Write",
+  "Merge",
+  "Extract",
+  "Open",
+  "Open as...",
+  "Open Copy",
+  "Open Read-Only",
+  "Import",
+  "Print",
+  "Read",
+  "View",
+  "Preview",
+  "Load",
+  "Download",
+  "Play",
+  "Enqueue",
+  "Attach",
+  "Extract",
+  "Compare",
+  NULL
+};
+
+/**
+ * sfcd_is_accept_label:
+ * @label: a prospective #SandboxFileChooserDialog button label
+ * 
+ * Verifies whether a button label would be valid for use in a button with a
+ * response id suggesting user acceptance of a file selection. This function
+ * automatically removes underscores from labels before performing a comparison
+ * so you don't need to do it yourself.
+ *
+ * Returns: True if the sanity check succeeds, False if the @dialog or @error
+ * were not as expected
+ *
+ * Since: 0.4
+ */
+gboolean sfcd_is_accept_label (const gchar *label)
+{
+  gchar **labelsplit = g_strsplit (label, "_", -1);
+  gchar *cleanlabel = g_strjoinv (NULL, labelsplit);
+  g_strfreev (labelsplit);
+
+  guint iter = 0;
+  while (SfcdAcceptLabels[iter])
+  {
+    // Should be ok since we receive UTF-8 strings via GDBus
+    if (!g_ascii_strcasecmp (SfcdAcceptLabels[iter], cleanlabel))
+    {
+      g_free (cleanlabel);
+      return TRUE;
+    }
+
+    ++iter;
+  }
+
+  g_free (cleanlabel);
+  return FALSE;
+}
+
 static void
 sfcd_init (SandboxFileChooserDialog *self)
 {
