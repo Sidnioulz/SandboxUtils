@@ -156,14 +156,17 @@ _rfcd_class_on_destroy (SfcdDbusWrapper *proxy,
   g_return_if_fail (sfcd != NULL);
   g_return_if_fail (sfcd_class != NULL);
 
-  syslog (LOG_DEBUG, "RemoteFileChooserDialogClass.OnDestroy: dialog '%s' will not emit a 'destroy' signal.\n",
+  syslog (LOG_DEBUG, "RemoteFileChooserDialogClass.OnDestroy: dialog '%s' will now emit a 'destroy' signal.\n",
           dialog_id);
 
-  // No need to do that, destroy it directly and it'll happen! Already destroyed on other side btw.
-  //TODO ^ FIXME check rfcd_destroy
   g_signal_emit (sfcd,
                  sfcd_class->destroy_signal,
                  0);
+
+  syslog (LOG_DEBUG, "SandboxFileChooserDialog.OnDestroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
+            sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
+
+  g_object_unref (sfcd);
 }
 
 static gboolean
@@ -253,6 +256,13 @@ static void
 rfcd_dispose (GObject* object)
 {
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (object);
+  RemoteFileChooserDialogClass *klass = REMOTE_FILE_CHOOSER_DIALOG_GET_CLASS (self);
+
+  if (self->priv->remote_id)
+    g_hash_table_remove (klass->instances, self->priv->remote_id);
+  else
+    syslog (LOG_DEBUG, "%s",
+            "SandboxFileChooserDialog.Dispose: removing a partially-created dialog. This should only happen if a RemoteSandboxFileChooserDialog was created while no server was available.\n");
 
   if (self->priv->local_parent)
   {
@@ -350,11 +360,14 @@ rfcd_new_valist (const gchar          *title,
 
   if (error)
   {
+    rfcd->priv->remote_id = NULL;
     g_object_unref (rfcd);
     rfcd = NULL;
     syslog (LOG_ALERT, "SandboxFileChooserDialog.New: error when creating dialog -- %s",
             g_error_get_message (error));
     g_error_free (error);
+
+    return NULL;
   }
   else
   {
@@ -362,7 +375,6 @@ rfcd_new_valist (const gchar          *title,
 
     // Local window, if we want to display a custom widget
     //FIXME should I make the parent transient for this?
-    //TODO take ownership?
     rfcd->priv->local_bits  = gtk_window_new (GTK_WINDOW_POPUP);
     //gtk_widget_show (rfcd->priv->local_bits);
 
@@ -372,9 +384,9 @@ rfcd_new_valist (const gchar          *title,
 
     RemoteFileChooserDialogClass *klass = REMOTE_FILE_CHOOSER_DIALOG_GET_CLASS (rfcd);
     g_hash_table_insert (klass->instances, rfcd->priv->remote_id, SANDBOX_FILE_CHOOSER_DIALOG (rfcd));
-  }
 
-  return SANDBOX_FILE_CHOOSER_DIALOG (rfcd);
+    return SANDBOX_FILE_CHOOSER_DIALOG (rfcd);
+  }
 }
 
 /**
@@ -422,19 +434,12 @@ rfcd_new (const gchar          *title,
   return rfcd;
 }
 
-//FIXME need another destroy that does not emit signals, but internal
-//FIXME only use that internal destroy when receiving a destroy signal
-
 static void
 rfcd_destroy (SandboxFileChooserDialog *sfcd)
 {
   g_return_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (sfcd));
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   RemoteFileChooserDialogClass *klass = REMOTE_FILE_CHOOSER_DIALOG_GET_CLASS (self);
-
-// TODO: inform that no signal shall be sent back or disconnect locally
-
-  g_hash_table_remove (klass->instances, self->priv->remote_id);
 
   GError *error = NULL;
   if (!sfcd_dbus_wrapper__call_destroy_sync (_rfcd_get_proxy (self),
@@ -448,11 +453,9 @@ rfcd_destroy (SandboxFileChooserDialog *sfcd)
   }
   else
   {
-    syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
+    syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s') is being remotely destroyed, will be locally destroyed upon receiving the 'destroy' signal.\n",
               sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
   }
-
-  g_object_unref (self);
 }
 
 SfcdState
@@ -469,7 +472,7 @@ rfcd_get_state (SandboxFileChooserDialog *sfcd)
                                              NULL,
                                              &error))
   {
-    syslog (LOG_ALERT, "SandboxFileChooserDialog.Destroy: error when destroying dialog %s -- %s",
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetState: error when querying dialog %s -- %s",
             sfcd_get_id (sfcd), g_error_get_message (error));
     g_error_free (error);
 
@@ -978,7 +981,7 @@ rfcd_class_init (RemoteFileChooserDialogClass *klass)
   /* Needed to find instances when receiving signals from the proxy */
   klass->instances = g_hash_table_new_full (g_str_hash,
                                             g_str_equal,
-                                            g_free,
+                                            NULL,
                                             NULL);
 
   /* Hook finalization functions */

@@ -440,6 +440,10 @@ lfcd_destroy (SandboxFileChooserDialog *sfcd)
                  klass->destroy_signal,
                  0);
 
+  // Interrupt the Run method if needed
+  if (lfcd_is_running (self))
+    gtk_widget_hide (self->priv->dialog);
+
   g_object_unref (self);
 }
 
@@ -829,7 +833,7 @@ lfcd_cancel_run (SandboxFileChooserDialog  *sfcd,
             sfcd_get_dialog_title (sfcd));
 
     // This is enough to cause the run method to issue a GTK_RESPONSE_NONE
-    gtk_widget_hide (self->priv->dialog);  
+    gtk_widget_hide (self->priv->dialog);
   }
 
   g_mutex_unlock (&self->priv->stateMutex);

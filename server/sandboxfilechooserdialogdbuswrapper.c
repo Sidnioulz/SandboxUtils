@@ -15,7 +15,9 @@
 
 #include "sandboxfilechooserdialogdbuswrapper.h"
 
-
+static void on_handle_response_signal (SandboxFileChooserDialog *, gint, gint, gpointer);
+static void on_handle_destroy_signal (SandboxFileChooserDialog *, gpointer);
+       
 /*
  * TODO doc
  */
@@ -55,7 +57,6 @@ static SandboxFileChooserDialog *
 _sfcd_dbus_wrapper_lookup_and_remove (SandboxUtilsClient  *cli,
                                       const gchar         *dialog_id)
 {
-  //FIXME adapt to new template
   SandboxFileChooserDialog *sfcd = NULL;
 
   g_mutex_lock (&cli->dialogsMutex);
@@ -80,6 +81,9 @@ _sfcd_dbus_wrapper_lookup_and_remove (SandboxUtilsClient  *cli,
 	    sfcd = NULL;
     }
   }
+
+  g_signal_handlers_disconnect_matched (sfcd, G_SIGNAL_MATCH_FUNC, 0, 0, NULL, on_handle_destroy_signal, NULL);
+  g_signal_handlers_disconnect_matched (sfcd, G_SIGNAL_MATCH_FUNC, 0, 0, NULL, on_handle_response_signal, NULL);
 
   g_mutex_unlock (&cli->dialogsMutex);
 
@@ -153,6 +157,9 @@ on_handle_response_signal (SandboxFileChooserDialog *sfcd,
   return;
 }
 
+// This method is called only when the user destroys the dialog via the WM,
+// which causes the local dialog being destroyed. For when the client app calls
+// the destroy method, see on_handle_destroy.
 static void
 on_handle_destroy_signal (SandboxFileChooserDialog *sfcd,
                          gpointer                   user_data)
@@ -161,10 +168,12 @@ on_handle_destroy_signal (SandboxFileChooserDialog *sfcd,
   SandboxUtilsClient         *cli        = info->client;
   const gchar                *dialog_id  = sfcd_get_id (sfcd);
 
+//FIXME  g_hash_table_remove (cli->dialogs, dialog_id);
+
   if ((sfcd = _sfcd_dbus_wrapper_lookup_and_remove (cli, dialog_id)) != NULL)
   {
-    sfcd_dbus_wrapper__emit_destroy (info->interface,
-                                     dialog_id);
+    sfcd_dbus_wrapper__emit_destroy (info->interface, dialog_id);
+    g_object_unref (sfcd);
   }
   _sfcd_dbus_wrapper_lookup_finished (NULL, sfcd, dialog_id);
 
@@ -213,6 +222,7 @@ on_handle_new (SfcdDbusWrapper        *interface,
   gchar *key = g_strdup (sfcd_get_id (sfcd));
 
   g_mutex_lock (&cli->dialogsMutex);
+  g_object_ref (sfcd);
   g_hash_table_insert (cli->dialogs, key, sfcd);
   g_mutex_unlock (&cli->dialogsMutex);
 
@@ -241,6 +251,12 @@ on_handle_get_state (SfcdDbusWrapper        *interface,
   return TRUE;
 }
 
+// This method is called only when the client app calls the destroy method. We
+// send the destroy signal ourselves to the client because we need to remove the
+// dialog from the hash table (to prevent new methods being called on an object
+// being destroyed). Our signal handler to the local dialog's "destroy" will be
+// removed at the same time we remove the dialog from the hash table. For when
+// the user destroys the dialog via the WM, see on_handle_destroy_signal.
 static gboolean
 on_handle_destroy (SfcdDbusWrapper        *interface,
                    GDBusMethodInvocation  *invocation,
@@ -253,10 +269,10 @@ on_handle_destroy (SfcdDbusWrapper        *interface,
 
   if ((sfcd = _sfcd_dbus_wrapper_lookup_and_remove (cli, dialog_id)) != NULL)
   {
-    //TODO disconnect destroy signal temporarily.
     sfcd_destroy (sfcd);
-    //TODO reconnect it.
     sfcd_dbus_wrapper__complete_destroy (interface, invocation);
+    sfcd_dbus_wrapper__emit_destroy (info->interface, dialog_id);
+    g_object_unref (sfcd);
   }
   _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
 
