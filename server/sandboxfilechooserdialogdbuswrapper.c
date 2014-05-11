@@ -210,14 +210,13 @@ on_handle_new (SfcdDbusWrapper        *interface,
   g_signal_connect (sfcd, "response", (GCallback) on_handle_response_signal, info);
 
   // Store dialog in the client's table and return its id
-  dialog_id = g_strdup_printf ("%p", sfcd);
-  gchar *key = g_strdup (dialog_id);
+  gchar *key = g_strdup (sfcd_get_id (sfcd));
 
   g_mutex_lock (&cli->dialogsMutex);
   g_hash_table_insert (cli->dialogs, key, sfcd);
   g_mutex_unlock (&cli->dialogsMutex);
 
-  sfcd_dbus_wrapper__complete_new (interface, invocation, dialog_id);
+  sfcd_dbus_wrapper__complete_new (interface, invocation, key);
 
   return TRUE;
 }

@@ -62,6 +62,8 @@ struct _LocalFileChooserDialogPrivate
 
 G_DEFINE_TYPE_WITH_PRIVATE (LocalFileChooserDialog, lfcd, SANDBOX_TYPE_FILE_CHOOSER_DIALOG)
 
+static guint64 __lfcd_instance_counter = 0;
+
 static void                 lfcd_destroy                       (SandboxFileChooserDialog *);
 static SfcdState            lfcd_get_state                     (SandboxFileChooserDialog *);
 static const gchar *        lfcd_get_state_printable           (SandboxFileChooserDialog *);
@@ -111,8 +113,7 @@ lfcd_init (LocalFileChooserDialog *self)
   self->priv->state         = SFCD_CONFIGURATION;
   self->priv->remote_parent = NULL;
 
-  //FIXME use a nicer (and safer) system
-  self->priv->id            = g_strdup_printf ("%p", self);
+  self->priv->id            = g_strdup_printf ("%lu", __lfcd_instance_counter++);
 
   g_mutex_init (&self->priv->stateMutex);
 }
