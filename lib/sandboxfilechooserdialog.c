@@ -523,6 +523,52 @@ _sfcd_entry_sanity_check (SandboxFileChooserDialog *self,
   return TRUE;
 }
 
+/**
+ * sfcd_set_destroy_with_parent:
+ * @dialog: a #SandboxFileChooserDialog
+ * @setting: whether to destroy @window with its transient parent
+ * 
+ * If @setting is %TRUE, then destroying the transient parent of @window
+ * will also destroy @window itself. This is useful for dialogs that
+ * shouldn't persist beyond the lifetime of the main window they're
+ * associated with, for example.
+ *
+ * This method can be called from any #SfcdState. It is equivalent to
+ * gtk_file_chooser_set_destroy_with_parent() in the GTK+ API.
+ *
+ * Since: 0.5
+ **/
+void
+sfcd_set_destroy_with_parent (SandboxFileChooserDialog  *self,
+                              gboolean                   setting)
+{
+  g_return_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self));
+
+  SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->set_destroy_with_parent (self, setting);
+}
+
+/**
+ * sfcd_get_destroy_with_parent:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ *
+ * Returns whether the window will be destroyed with its transient parent; See
+ * sfcd_set_destroy_with_parent() for more information.
+ *
+ * This method can be called from any #SfcdState. It is equivalent to
+ * gtk_file_chooser_get_destroy_with_parent() in the GTK+ API.
+ *
+ * Return value: %TRUE if the window will be destroyed with its transient parent.
+ *
+ * Since: 0.5
+ **/
+gboolean
+sfcd_get_destroy_with_parent (SandboxFileChooserDialog *self)
+{
+  g_return_val_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+
+  return SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->get_destroy_with_parent (self);
+}
 
 /* RUNNING METHODS */
 /**
@@ -702,7 +748,7 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
 }
 
 
-/* RUNNING METHODS */
+/* CONFIGURATION METHODS */
 /**
  * sfcd_set_action:
  * @dialog: a #SandboxFileChooserDialog

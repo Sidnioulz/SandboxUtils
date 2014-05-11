@@ -72,6 +72,8 @@ static gboolean             lfcd_is_running                    (SandboxFileChoos
 static const gchar *        lfcd_get_id                        (SandboxFileChooserDialog *);
 static void                 lfcd_run                           (SandboxFileChooserDialog *, GError **);
 static void                 lfcd_present                       (SandboxFileChooserDialog *, GError **);
+static void                 lfcd_set_destroy_with_parent       (SandboxFileChooserDialog *, gboolean);
+static gboolean             lfcd_get_destroy_with_parent       (SandboxFileChooserDialog *);
 static void                 lfcd_cancel_run                    (SandboxFileChooserDialog *, GError **);
 static void                 lfcd_set_action                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
 static GtkFileChooserAction lfcd_get_action                    (SandboxFileChooserDialog *, GError **);
@@ -260,8 +262,6 @@ lfcd_new_valist (const gchar          *title,
   g_signal_connect_swapped (lfcd->priv->dialog, "hide", (GCallback) _lfcd_on_hide, sfcd);
   g_signal_connect_swapped (lfcd->priv->dialog, "show", (GCallback) _lfcd_on_show, sfcd);
   
-  //TODO manage close
-
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
             lfcd->priv->id, title);
 
@@ -441,7 +441,7 @@ lfcd_destroy (SandboxFileChooserDialog *sfcd)
                  0);
 
   // Interrupt the Run method if needed
-  if (lfcd_is_running (self))
+  if (lfcd_is_running (sfcd))
     gtk_widget_hide (self->priv->dialog);
 
   g_object_unref (self);
@@ -486,7 +486,6 @@ lfcd_is_running (SandboxFileChooserDialog *sfcd)
   return self->priv->state == SFCD_RUNNING;
 }
 
-//TODO use an ID that does not inform of the memory layout!
 const gchar *
 lfcd_get_id (SandboxFileChooserDialog *sfcd)
 {
@@ -527,6 +526,47 @@ _lfcd_entry_sanity_check (LocalFileChooserDialog    *self,
   }
 
   return TRUE;
+}
+
+void
+lfcd_set_destroy_with_parent (SandboxFileChooserDialog  *sfcd,
+                              gboolean                   setting)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (LOCAL_IS_FILE_CHOOSER_DIALOG (self));
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  gtk_window_set_destroy_with_parent (GTK_WINDOW (self->priv->dialog), setting);
+
+  syslog (LOG_DEBUG,
+          "SandboxFileChooserDialog.SetDestroyWithParent: dialog '%s' ('%s') now has destroy-with-parent '%d'.\n",
+          sfcd_get_id (sfcd),
+          sfcd_get_dialog_title (sfcd),
+          setting);
+
+  g_mutex_unlock (&self->priv->stateMutex);
+}
+
+gboolean
+lfcd_get_destroy_with_parent (SandboxFileChooserDialog *sfcd)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_val_if_fail (LOCAL_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  gboolean result = gtk_window_get_destroy_with_parent (GTK_WINDOW (self->priv->dialog));
+
+  syslog (LOG_DEBUG,
+          "SandboxFileChooserDialog.GetDestroyWithParent: dialog '%s' ('%s') has destroy-with-parent '%d'.\n",
+          sfcd_get_id (sfcd),
+          sfcd_get_dialog_title (sfcd),
+          result);
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return result;
 }
 
 
@@ -2148,8 +2188,6 @@ lfcd_class_init (LocalFileChooserDialogClass *klass)
   SandboxFileChooserDialogClass *sfcd_class = SANDBOX_FILE_CHOOSER_DIALOG_CLASS (klass);
   GObjectClass  *g_object_class = G_OBJECT_CLASS(klass);
 
-  //FIXME maybe reintroduce signals here?
-
   /* Hook finalization functions */
   g_object_class->dispose = lfcd_dispose; /* instance destructor, reverse of init */
   g_object_class->finalize = lfcd_finalize; /* class finalization, reverse of class init */
@@ -2164,6 +2202,8 @@ lfcd_class_init (LocalFileChooserDialogClass *klass)
   sfcd_class->run = lfcd_run;
   sfcd_class->present = lfcd_present;
   sfcd_class->cancel_run = lfcd_cancel_run;
+  sfcd_class->set_destroy_with_parent = lfcd_set_destroy_with_parent;
+  sfcd_class->get_destroy_with_parent = lfcd_get_destroy_with_parent;
   sfcd_class->set_action = lfcd_set_action;
   sfcd_class->get_action = lfcd_get_action;
   sfcd_class->set_local_only = lfcd_set_local_only;

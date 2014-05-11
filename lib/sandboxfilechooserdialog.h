@@ -125,6 +125,8 @@ struct _SandboxFileChooserDialogClass
   void                 (*run)                           (SandboxFileChooserDialog *, GError **);
   void                 (*present)                       (SandboxFileChooserDialog *, GError **);
   void                 (*cancel_run)                    (SandboxFileChooserDialog *, GError **);
+  void                 (*set_destroy_with_parent)       (SandboxFileChooserDialog *, gboolean);
+  gboolean             (*get_destroy_with_parent)       (SandboxFileChooserDialog *);
   void                 (*set_action)                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
   GtkFileChooserAction (*get_action)                    (SandboxFileChooserDialog *, GError **);
   void                 (*set_local_only)                (SandboxFileChooserDialog *, gboolean, GError **);
@@ -211,6 +213,12 @@ sfcd_cancel_run                    (SandboxFileChooserDialog  *dialog,
 
 
 /* CONFIGURATION / MANAGEMENT METHODS  -- USABLE BEFORE RUN */
+void
+sfcd_set_destroy_with_parent       (SandboxFileChooserDialog  *dialog,
+                                    gboolean                   setting);
+
+gboolean
+sfcd_get_destroy_with_parent       (SandboxFileChooserDialog  *dialog);
 void
 sfcd_set_action                    (SandboxFileChooserDialog  *dialog,
                                     GtkFileChooserAction       action,

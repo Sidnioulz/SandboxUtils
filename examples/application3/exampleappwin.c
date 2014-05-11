@@ -93,8 +93,9 @@ on_open_clicked (GtkButton *button,
 
         if (dialog)
         {
+          sfcd_set_destroy_with_parent (dialog, TRUE);
           g_signal_connect (dialog, "response", (GCallback) on_response, win);
-          g_signal_connect (dialog, "destroy", (GCallback) on_destroy, win);
+          g_signal_connect (dialog, "destroy", (GCallback) gtk_widget_destroyed, &dialog);
 
           GError *error = NULL;
           sfcd_run (dialog, &error);
@@ -159,8 +160,9 @@ on_save_clicked (GtkButton *button,
 
           if (savedialog)
           {
+            sfcd_set_destroy_with_parent (savedialog, TRUE);
             g_signal_connect (savedialog, "response", (GCallback) on_save_response, win);
-            g_signal_connect (savedialog, "destroy", (GCallback) on_save_destroy, win);
+            g_signal_connect (savedialog, "destroy", (GCallback) gtk_widget_destroyed, &savedialog);
 
             GError *error = NULL;
             sfcd_set_do_overwrite_confirmation (savedialog, TRUE, &error);

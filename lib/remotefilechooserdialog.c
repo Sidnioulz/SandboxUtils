@@ -31,12 +31,12 @@
  * #SandboxFileChooserDialog API. This class redirects all of its methods over
  * GDBus to a remote server that spawns and processes actual GTK+ dialogs.
  * #RemoteFileChooserDialog can only be used if such a server is present, which
- * is normally the case only for sandboxed applications. 
+ * is normally the case only for sandboxed applications.
  *
  * #RemoteFileChooserDialog exposes fewer constructors than #LocalFileChooserDialog
  * because it is only meant to be called by #SandboxFileChooserDialog's sfcd_new()
  * in cases where remote dialogs should be used (such as being jailed in a
- * sandbox with a server). 
+ * sandbox with a server).
  *
  * Since: 0.5
  **/
@@ -54,6 +54,7 @@ struct _RemoteFileChooserDialogPrivate
 {
   GtkWidget             *local_bits;    /* fake container for local widgets */
   GtkWindow             *local_parent;  /* transient parent window (allow-none) */
+  gboolean              destroy_with_parent;  /* whether to destroy this dialog with its parent (allow-none) */
   gchar                 *remote_id;     /* id of this instance */
   gchar                 *cached_title;  /* cached version of the dialog title */
 };
@@ -69,6 +70,8 @@ static const gchar *        rfcd_get_id                        (SandboxFileChoos
 static void                 rfcd_run                           (SandboxFileChooserDialog *, GError **);
 static void                 rfcd_present                       (SandboxFileChooserDialog *, GError **);
 static void                 rfcd_cancel_run                    (SandboxFileChooserDialog *, GError **);
+static void                 rfcd_set_destroy_with_parent       (SandboxFileChooserDialog *, gboolean);
+static gboolean             rfcd_get_destroy_with_parent       (SandboxFileChooserDialog *);
 static void                 rfcd_set_action                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
 static GtkFileChooserAction rfcd_get_action                    (SandboxFileChooserDialog *, GError **);
 static void                 rfcd_set_local_only                (SandboxFileChooserDialog *, gboolean, GError **);
@@ -248,6 +251,7 @@ rfcd_init (RemoteFileChooserDialog *self)
 
   self->priv->local_bits    = NULL;
   self->priv->local_parent  = NULL;
+  self->priv->destroy_with_parent  = FALSE;
   self->priv->remote_id     = NULL;
   self->priv->cached_title  = NULL;
 }
@@ -263,11 +267,6 @@ rfcd_dispose (GObject* object)
   else
     syslog (LOG_DEBUG, "%s",
             "SandboxFileChooserDialog.Dispose: removing a partially-created dialog. This should only happen if a RemoteSandboxFileChooserDialog was created while no server was available.\n");
-
-  if (self->priv->local_parent)
-  {
-    //TODO detach/unref?
-  }
 
   if (self->priv->local_bits)
   {
@@ -289,6 +288,16 @@ rfcd_finalize (GObject* object)
 {
 }
 
+static void
+_rfcd_on_parent_destroyed (GtkWidget *parent,
+                           gpointer user_data)
+{
+  RemoteFileChooserDialog *rfcd = user_data;
+
+  if (rfcd->priv->destroy_with_parent)
+    rfcd_destroy (rfcd);
+}
+
 /**
  * rfcd_new_valist:
  * @title: (allow-none): Title of the dialog, or %NULL
@@ -299,9 +308,9 @@ rfcd_finalize (GObject* object)
  *
  * Creates a new #RemoteFileChooserDialog. You usually should not use this
  * function. In a normal application, you almost always want to use sfcd_new().
- * 
+ *
  * The @parent parameter will not be made transient out of the box in a
- * #RemoteFileChooserDialog, because the actual GTK+ dialog is controlled by 
+ * #RemoteFileChooserDialog, because the actual GTK+ dialog is controlled by
  * a remote process. As of 0.5.0, there is no
  * convention or standard on what this parameter should represent, and no
  * servers or compositors implementing it. It will be used in future releases.
@@ -310,8 +319,8 @@ rfcd_finalize (GObject* object)
  *
  * Return value: a new #SansboxFileChooserDialog
  *
- * See also: rfcd_new() to create a #RemoteFileChooserDialog, and sfcd_new() to 
- * create a #SandboxFileChooserDialog regardless of whether local or remote. 
+ * See also: rfcd_new() to create a #RemoteFileChooserDialog, and sfcd_new() to
+ * create a #SandboxFileChooserDialog regardless of whether local or remote.
  *
  * Since: 0.5
  **/
@@ -327,6 +336,8 @@ rfcd_new_valist (const gchar          *title,
 
   // Remember local parent's identity
   rfcd->priv->local_parent = parent;
+  g_signal_connect (parent, "destroy", (GCallback) _rfcd_on_parent_destroyed, rfcd);
+
   //TODO get from parent
   const gchar *parentWinId = "(null)";//NULL;
 
@@ -399,9 +410,9 @@ rfcd_new_valist (const gchar          *title,
  *
  * Creates a new #RemoteFileChooserDialog. You usually should not use this
  * function. In a normal application, you almost always want to use sfcd_new().
- * 
+ *
  * The @parent parameter will not be made transient out of the box in a
- * #RemoteFileChooserDialog, because the actual GTK+ dialog is controlled by 
+ * #RemoteFileChooserDialog, because the actual GTK+ dialog is controlled by
  * a remote process. As of 0.5.0, there is no
  * convention or standard on what this parameter should represent, and no
  * servers or compositors implementing it. It will be used in future releases.
@@ -410,8 +421,8 @@ rfcd_new_valist (const gchar          *title,
  *
  * Return value: a new #SansboxFileChooserDialog
  *
- * See also: rfcd_new() to create a #RemoteFileChooserDialog, and sfcd_new() to 
- * create a #SandboxFileChooserDialog regardless of whether local or remote. 
+ * See also: rfcd_new() to create a #RemoteFileChooserDialog, and sfcd_new() to
+ * create a #SandboxFileChooserDialog regardless of whether local or remote.
  *
  * Since: 0.5
  **/
@@ -522,7 +533,7 @@ _rfcd_entry_sanity_check (RemoteFileChooserDialog    *self,
   // If the callee forgot to clean their error before calling us...
   if (*error != NULL)
   {
-    g_prefix_error (error, 
+    g_prefix_error (error,
                     "%s",
                     "SandboxFileChooserDialog._SanityCheck failed because an error "
                     "was already set (this should never happen, please report a bug).\n");
@@ -545,6 +556,24 @@ _rfcd_entry_sanity_check (RemoteFileChooserDialog    *self,
   return TRUE;
 }
 
+static void
+rfcd_set_destroy_with_parent (SandboxFileChooserDialog *sfcd,
+                              gboolean                  setting)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self));
+
+  self->priv->destroy_with_parent = setting;
+}
+
+static gboolean
+rfcd_get_destroy_with_parent (SandboxFileChooserDialog  *sfcd)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), FALSE);
+
+  return self->priv->destroy_with_parent;
+}
 
 /* RUNNING METHODS */
 //TODO handlers for GDBus signals
@@ -578,7 +607,7 @@ rfcd_present (SandboxFileChooserDialog  *sfcd,
                                              NULL,
                                              error))
   {
-    syslog (LOG_ALERT, "SandboxFileChooserDialog.Present: error when running dialog %s -- %s",
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.Present: error when presenting dialog %s -- %s",
             sfcd_get_id (sfcd), g_error_get_message (*error));
   }
 }
@@ -595,7 +624,7 @@ rfcd_cancel_run (SandboxFileChooserDialog  *sfcd,
                                                 NULL,
                                                 error))
   {
-    syslog (LOG_ALERT, "SandboxFileChooserDialog.CancelRun: error when running dialog %s -- %s",
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.CancelRun: error when cancelling the run of dialog %s -- %s",
             sfcd_get_id (sfcd), g_error_get_message (*error));
   }
 }
@@ -608,17 +637,34 @@ rfcd_set_action (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_action_sync (_rfcd_get_proxy (self),
+                                                self->priv->remote_id,
+                                                action,
+                                                NULL,
+                                                error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetAction: error when modifying dialog %s -- %s",
+            sfcd_get_id (sfcd), g_error_get_message (*error));
+  }
 }
 
 static GtkFileChooserAction
 rfcd_get_action (SandboxFileChooserDialog *sfcd,
                  GError                  **error)
 {
+  gboolean result = FALSE;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
-  GtkFileChooserAction result = GTK_FILE_CHOOSER_ACTION_OPEN;
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), result);
 
-  g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), result);
-
+  if (!sfcd_dbus_wrapper__call_get_action_sync (_rfcd_get_proxy (self),
+                                                self->priv->remote_id,
+                                                &result,
+                                                NULL,
+                                                error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetAction: error when querying dialog %s -- %s",
+            sfcd_get_id (sfcd), g_error_get_message (*error));
+  }
 
   return result;
 }
@@ -998,6 +1044,8 @@ rfcd_class_init (RemoteFileChooserDialogClass *klass)
   sfcd_class->run = rfcd_run;
   sfcd_class->present = rfcd_present;
   sfcd_class->cancel_run = rfcd_cancel_run;
+  sfcd_class->set_destroy_with_parent = rfcd_set_destroy_with_parent;
+  sfcd_class->get_destroy_with_parent = rfcd_get_destroy_with_parent;
   sfcd_class->set_action = rfcd_set_action;
   sfcd_class->get_action = rfcd_get_action;
   sfcd_class->set_local_only = rfcd_set_local_only;

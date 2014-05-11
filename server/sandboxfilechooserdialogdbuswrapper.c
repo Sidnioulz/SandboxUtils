@@ -279,8 +279,6 @@ on_handle_destroy (SfcdDbusWrapper        *interface,
   return TRUE;
 }
 
-//TODO destroy
-
 static gboolean
 on_handle_run (SfcdDbusWrapper        *interface,
                GDBusMethodInvocation  *invocation,
