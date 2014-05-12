@@ -17,8 +17,8 @@ m4_define(glib_configure_ac)
 #
 
 m4_define([su_major_version], [0])
-m4_define([su_minor_version], [5])
-m4_define([su_micro_version], [1])
+m4_define([su_minor_version], [6])
+m4_define([su_micro_version], [0])
 m4_define([su_interface_age], [0])
 m4_define([su_binary_age], [0])
 

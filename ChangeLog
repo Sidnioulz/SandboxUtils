@@ -1,3 +1,46 @@
+2014-05-12  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * lib/*filechooserdbuswrapper.*: Implemented extra widgets with GtkPlug and
+    GtkSocket. New dependency on X11 -- will not build with other display
+    servers. Extra widgets will be implemented for Wayland using another
+    approach. Note that there are no security guarantees as to extra widgets;
+    They are untested and here only for demonstration purposes (only the Wayland
+    code will matter ultimately).
+
+2014-05-11  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * lib/*filechooserdbuswrapper.*: Implemented Set/GetDestroyWithParent. One
+    should still expect occasional bugs with this, as the implementation is very
+    partial.
+
+    * lib/*filechooserdbuswrapper.*: The destruction of dialogs works properly,
+    regardless of whether a dialog is destroyed from the WM, from the client
+    while running or from the client after running.
+
+    * lib/localfilechooserdialog.*: Now using a list of acceptance-meaning
+    labels to protect against attacks such as using "Cancel":GTK_RESPONSE_OK
+    buttons.
+
+    * lib/remotefilechooserdialog.*, server/sandboxfilechooserdbuswrapper.c: Now
+    using dialog ids that don't leak the memory layout of the server.
+
+2014-05-10  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * lib/localfilechooserdialog.*: Adjusting the return state of LFCD based on 
+    the type of response id received.
+
+2014-05-09  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * lib/sandboxfilechooserdbuswrapper.h: Removing the confirm-overwrite signal
+    from the API as I can't make signals with return values work over GDBus.
+
+2014-05-08  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * lib/*filechooserdialog.*: Initial work on confirm-overwrite.
+
+    * lib/,examples/application3/*: Better response handling, reusable dialog in
+    the example app.
+
 2014-05-07  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
 
     * server/sandboxfilechooserdbuswrapper.c: Now forwarding destroy signal to
