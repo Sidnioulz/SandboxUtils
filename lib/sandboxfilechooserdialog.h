@@ -407,14 +407,6 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
 /**
  * Proposed API changes
  * _____________________________________________________________________________
- * API CHANGE: Response ID to influence state
- *
- * Define response IDs that allow a data retrieval state. Enforce stock
- * labels (that are HIG-compliant) for these response IDs to avoid the user
- * cancelling and the app still getting access.
- *
- *   gtk_file_chooser_run ()
- * _____________________________________________________________________________
  * API CHANGE: Select at least X items
  *
  * Add flag to make sure the user selects multiple items, if needed for a diff
@@ -450,21 +442,6 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
  *   char *	gtk_file_chooser_get_preview_uri ()
  *   GFile *	gtk_file_chooser_get_preview_file ()
  * _____________________________________________________________________________
- * API CHANGE: modify the select family a bit. Limit it to the config state, and
- * add a select_if_exists family of methods for apps to preselect files without
- * seeing whether they actually exist, while in config state. Clients should be
- * made aware that they can't really know what's selected, so they can't expect
- * functions like unselect_filename () to be often useful.
- *
- *   gboolean	gtk_file_chooser_select_filename ()
- *   void	gtk_file_chooser_unselect_filename ()
- *   void	gtk_file_chooser_select_all ()
- *   void	gtk_file_chooser_unselect_all ()
- *   gboolean	gtk_file_chooser_select_uri ()
- *   void	gtk_file_chooser_unselect_uri ()
- *   gboolean	gtk_file_chooser_select_file ()
- *   void	gtk_file_chooser_unselect_file ()
- * _____________________________________________________________________________
  * API CHANGE: make GtkFileFilter DBus-transportable, somehow
  *
  *   void	gtk_file_chooser_add_filter ()
@@ -489,10 +466,6 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
  * _____________________________________________________________________________
 **/
 
-
-// TODO: propose a stricter API where state switches need to be made via a Reset
-//       method
-//
 // TODO: having the dialog modal locally should cause the compositor
 //       to handle it as a modal child of the client
 //
