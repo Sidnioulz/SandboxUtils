@@ -62,8 +62,7 @@ main (int argc, char *argv[])
 #endif
 
   // Initialise sandboxutils settings
-  // TODO // sandboxutils_init (&argc, &argv);
-  __temp_sandboxutils_init (TRUE);
+  sandboxutils_set_sandboxed (FALSE);
 
   // Initialise GTK for later
   gtk_init (&argc, &argv);

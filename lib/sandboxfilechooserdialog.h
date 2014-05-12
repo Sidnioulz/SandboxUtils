@@ -488,10 +488,6 @@ To receive this signal the GdkWindow associated to the widget needs to enable th
 
 */
 
-
-//FIXME remove this hack ASAP
-void __temp_sandboxutils_init (gboolean);
-
 G_END_DECLS
 
 #endif /* __SANDBOX_FILE_CHOOSER_DIALOG_H__ */

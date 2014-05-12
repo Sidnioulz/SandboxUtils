@@ -101,14 +101,6 @@
 
 G_DEFINE_TYPE (SandboxFileChooserDialog, sfcd, G_TYPE_OBJECT)
 
-/* DO NOT TOUCH FOR NOW - waiting for sandboxutils_init */
-static gboolean __temp_init = FALSE;
-
-void __temp_sandboxutils_init (gboolean use_local)
-{
-  __temp_init = use_local;
-}
-
 /**
  * SfcdAcceptLabels:
  * An array of button labels that are considered to correspond to an action
@@ -331,15 +323,13 @@ sfcd_new (const gchar *title,
 {
   SandboxFileChooserDialog *sfcd = NULL;
 
-  //TODO get global settings from sandboxutils_init();
   va_list varargs;
   va_start(varargs, first_button_text);
 
-  //FIXME This is a hack -- waiting for sandboxutils_init()
- // if (__temp_init)
-   // sfcd = lfcd_new_valist (title, NULL, parent, action, first_button_text, varargs);
- // else
+  if (sandboxutils_get_sandboxed ())
     sfcd = rfcd_new_valist (title, parent, action, first_button_text, varargs);
+  else
+    sfcd = lfcd_new_valist (title, NULL, parent, action, first_button_text, varargs);
 
   va_end(varargs);
 

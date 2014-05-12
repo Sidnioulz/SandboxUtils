@@ -28,4 +28,16 @@ min (int a, int b);
 const int
 max (int a, int b);
 
+GOptionGroup *
+sandboxutils_get_option_group ();
+gboolean
+sandboxutils_parse_args (int    *argc,
+                         char  **argv[]);
+gboolean
+sandboxutils_get_sandboxed ();
+void
+sandboxutils_set_sandboxed (gboolean sandbox);
+void
+sandboxutils_init (int *argc, char **argv[]);
+
 #endif /* __SANDBOX_UTILS_COMMON_H__ */
