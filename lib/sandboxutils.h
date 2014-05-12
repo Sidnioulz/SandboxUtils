@@ -26,9 +26,6 @@
 #include "sandboxutilsmarshals.h"
 #include "sandboxfilechooserdialog.h"
 #include "localfilechooserdialog.h"
-#if 0
-TODO
 #include "remotefilechooserdialog.h"
-#endif
 
 #endif /* __SANDBOX_UTILS_MAIN_HEADER_H__ */
