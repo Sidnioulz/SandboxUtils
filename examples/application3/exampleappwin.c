@@ -95,6 +95,24 @@ on_open_clicked (GtkButton *button,
                              "Open", GTK_RESPONSE_OK,
                              "Cancel", GTK_RESPONSE_CANCEL,
                              NULL);
+
+        if (dialog)
+        {
+          sfcd_set_destroy_with_parent (dialog, TRUE);
+          g_signal_connect (dialog, "response", (GCallback) on_response, win);
+          g_signal_connect (dialog, "destroy", (GCallback) gtk_widget_destroyed, &dialog);
+
+          GError *error = NULL;
+          GtkWidget *extra = gtk_font_button_new ();
+          sfcd_set_extra_widget (dialog, extra, &error);
+          if (error)
+          {
+            g_printf ("Set Widget Error: %s\n", error->message);
+            g_error_free (error); //TODO
+          }
+        }
+        else
+            g_printf ("%s", "Could not create a dialog.\n");
         }
 
         else if (sfcd_is_running (dialog))
@@ -111,24 +129,11 @@ on_open_clicked (GtkButton *button,
 
         if (dialog)
         {
-          sfcd_set_destroy_with_parent (dialog, TRUE);
-          g_signal_connect (dialog, "response", (GCallback) on_response, win);
-          g_signal_connect (dialog, "destroy", (GCallback) gtk_widget_destroyed, &dialog);
-
           GError *error = NULL;
           sfcd_run (dialog, &error);
           if (error)
           {
             g_printf ("Run Error: %s\n", error->message);
-            g_error_free (error); //TODO
-          }
-
-          error = NULL;
-          GtkWidget *extra = gtk_font_button_new ();
-          sfcd_set_extra_widget (dialog, extra, &error);
-          if (error)
-          {
-            g_printf ("Set Widget Error: %s\n", error->message);
             g_error_free (error); //TODO
           }
         }
