@@ -248,7 +248,6 @@ _rfcd_reset_proxy (RemoteFileChooserDialog *self)
   return _rfcd_get_proxy (self);
 }
 
-
 static void
 rfcd_init (RemoteFileChooserDialog *self)
 {
@@ -260,6 +259,19 @@ rfcd_init (RemoteFileChooserDialog *self)
   self->priv->destroy_with_parent  = FALSE;
   self->priv->remote_id     = NULL;
   self->priv->cached_title  = NULL;
+}
+
+static gboolean
+_rfcd_on_parent_destroyed (GtkWidget *parent,
+                           GdkEvent  *event,
+                           gpointer   user_data)
+{
+  RemoteFileChooserDialog *rfcd = user_data;
+
+  if (rfcd->priv->destroy_with_parent)
+    rfcd_destroy (SANDBOX_FILE_CHOOSER_DIALOG (rfcd));
+
+  return FALSE;
 }
 
 static void
@@ -275,9 +287,10 @@ rfcd_dispose (GObject* object)
             "SandboxFileChooserDialog.Dispose: removing a partially-created dialog. This should only happen if a RemoteSandboxFileChooserDialog was created while no server was available.\n");
 
   if (self->priv->local_bits)
-  {
     gtk_widget_destroy (self->priv->local_bits);
-  }
+
+  if (self->priv->local_parent)
+    g_signal_handlers_disconnect_by_func (self->priv->local_parent, (GCallback) _rfcd_on_parent_destroyed, self);
 
   if (self->priv->cached_title)
     g_free (self->priv->cached_title);
@@ -292,16 +305,6 @@ rfcd_dispose (GObject* object)
 static void
 rfcd_finalize (GObject* object)
 {
-}
-
-static void
-_rfcd_on_parent_destroyed (GtkWidget *parent,
-                           gpointer user_data)
-{
-  RemoteFileChooserDialog *rfcd = user_data;
-
-  if (rfcd->priv->destroy_with_parent)
-    rfcd_destroy (SANDBOX_FILE_CHOOSER_DIALOG (rfcd));
 }
 
 /**
@@ -342,7 +345,7 @@ rfcd_new_valist (const gchar          *title,
 
   // Remember local parent's identity
   rfcd->priv->local_parent = parent;
-  g_signal_connect (parent, "destroy", (GCallback) _rfcd_on_parent_destroyed, rfcd);
+  g_signal_connect (parent, "delete-event", (GCallback) _rfcd_on_parent_destroyed, rfcd);
 
   // Local window, if we want to display a custom widget
   gchar *parentWinId = g_strdup ("(null)");
