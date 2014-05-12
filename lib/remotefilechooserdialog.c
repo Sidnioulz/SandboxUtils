@@ -171,8 +171,9 @@ _rfcd_class_on_destroy (SfcdDbusWrapper *proxy,
                  sfcd_class->destroy_signal,
                  0);
 
+  RemoteFileChooserDialog *rfcd = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.OnDestroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
-            sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
+            rfcd->priv->remote_id, rfcd->priv->cached_title);
 
   g_object_unref (sfcd);
 }
@@ -462,13 +463,13 @@ rfcd_destroy (SandboxFileChooserDialog *sfcd)
                                              &error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Destroy: error when destroying dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (error));
+            self->priv->remote_id, g_error_get_message (error));
     g_error_free (error);
   }
   else
   {
     syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s') is being remotely destroyed, will be locally destroyed upon receiving the 'destroy' signal.\n",
-              sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
+              self->priv->remote_id, sfcd_get_dialog_title (sfcd));
   }
 }
 
@@ -487,7 +488,7 @@ rfcd_get_state (SandboxFileChooserDialog *sfcd)
                                              &error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetState: error when querying dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (error));
+            self->priv->remote_id, g_error_get_message (error));
     g_error_free (error);
 
   }
@@ -602,7 +603,7 @@ rfcd_set_extra_widget (SandboxFileChooserDialog *sfcd,
                                                       error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetExtraWidget: error when modifying dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (*error));
+            self->priv->remote_id, g_error_get_message (*error));
 
     gtk_widget_destroy (plug);
   }
@@ -646,7 +647,7 @@ rfcd_run (SandboxFileChooserDialog *sfcd,
                                          error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Run: error when running dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (*error));
+            self->priv->remote_id, g_error_get_message (*error));
   }
 }
 
@@ -663,7 +664,7 @@ rfcd_present (SandboxFileChooserDialog  *sfcd,
                                              error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Present: error when presenting dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (*error));
+            self->priv->remote_id, g_error_get_message (*error));
   }
 }
 
@@ -680,7 +681,7 @@ rfcd_cancel_run (SandboxFileChooserDialog  *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.CancelRun: error when cancelling the run of dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (*error));
+            self->priv->remote_id, g_error_get_message (*error));
   }
 }
 
@@ -699,7 +700,7 @@ rfcd_set_action (SandboxFileChooserDialog  *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetAction: error when modifying dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (*error));
+            self->priv->remote_id, g_error_get_message (*error));
   }
 }
 
@@ -707,7 +708,7 @@ static GtkFileChooserAction
 rfcd_get_action (SandboxFileChooserDialog *sfcd,
                  GError                  **error)
 {
-  gboolean result = FALSE;
+  gint result = GTK_FILE_CHOOSER_ACTION_OPEN;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), result);
 
@@ -718,7 +719,7 @@ rfcd_get_action (SandboxFileChooserDialog *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetAction: error when querying dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (*error));
+            self->priv->remote_id, g_error_get_message (*error));
   }
 
   return result;
@@ -732,17 +733,34 @@ rfcd_set_local_only (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_local_only_sync (_rfcd_get_proxy (self),
+                                                    self->priv->remote_id,
+                                                    local_only,
+                                                    NULL,
+                                                    error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetLocalOnly: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static gboolean
 rfcd_get_local_only (SandboxFileChooserDialog  *sfcd,
                      GError                   **error)
 {
-  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   gboolean result = FALSE;
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), result);
 
-  g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), result);
-
+  if (!sfcd_dbus_wrapper__call_get_local_only_sync (_rfcd_get_proxy (self),
+                                                    self->priv->remote_id,
+                                                    &result,
+                                                    NULL,
+                                                    error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetLocalOnly: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return result;
 }
@@ -755,17 +773,34 @@ rfcd_set_select_multiple (SandboxFileChooserDialog *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_select_multiple_sync (_rfcd_get_proxy (self),
+                                                         self->priv->remote_id,
+                                                         select_multiple,
+                                                         NULL,
+                                                         error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetSelectMultiple: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static gboolean
 rfcd_get_select_multiple (SandboxFileChooserDialog  *sfcd,
                           GError                   **error)
 {
-  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   gboolean result = FALSE;
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), result);
 
-  g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), result);
-
+  if (!sfcd_dbus_wrapper__call_get_select_multiple_sync (_rfcd_get_proxy (self),
+                                                         self->priv->remote_id,
+                                                        &result,
+                                                         NULL,
+                                                         error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetSelectMultiple: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return result;
 }
@@ -778,17 +813,34 @@ rfcd_set_show_hidden (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_show_hidden_sync (_rfcd_get_proxy (self),
+                                                     self->priv->remote_id,
+                                                     show_hidden,
+                                                     NULL,
+                                                     error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetShowHidden: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static gboolean
 rfcd_get_show_hidden (SandboxFileChooserDialog *sfcd,
                       GError                  **error)
 {
-  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   gboolean result = FALSE;
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), result);
 
-  g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), result);
-
+  if (!sfcd_dbus_wrapper__call_get_show_hidden_sync (_rfcd_get_proxy (self),
+                                                     self->priv->remote_id,
+                                                     &result,
+                                                     NULL,
+                                                     error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetShowHidden: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return result;
 }
@@ -808,7 +860,7 @@ rfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *sfcd,
                                                                    error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetDoOverwriteConfirmation: error when modifying dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (*error));
+            self->priv->remote_id, g_error_get_message (*error));
   }
 
 }
@@ -817,11 +869,19 @@ static gboolean
 rfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *sfcd,
                                     GError                   **error)
 {
-  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   gboolean result = FALSE;
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), result);
 
-  g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), result);
-
+  if (!sfcd_dbus_wrapper__call_get_do_overwrite_confirmation_sync (_rfcd_get_proxy (self),
+                                                                   self->priv->remote_id,
+                                                                   &result,
+                                                                   NULL,
+                                                                   error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetDoOverwriteConfirmation: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return result;
 }
@@ -834,17 +894,34 @@ rfcd_set_create_folders (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_create_folders_sync (_rfcd_get_proxy (self),
+                                                        self->priv->remote_id,
+                                                        create_folders,
+                                                        NULL,
+                                                        error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetCreateFolders: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static gboolean
 rfcd_get_create_folders (SandboxFileChooserDialog  *sfcd,
                          GError                   **error)
 {
-  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   gboolean result = FALSE;
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), result);
 
-  g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), result);
-
+  if (!sfcd_dbus_wrapper__call_get_create_folders_sync (_rfcd_get_proxy (self),
+                                                    self->priv->remote_id,
+                                                    &result,
+                                                    NULL,
+                                                    error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetCreateFolders: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return result;
 }
@@ -857,6 +934,15 @@ rfcd_set_current_name (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_current_name_sync (_rfcd_get_proxy (self),
+                                                      self->priv->remote_id,
+                                                      name,
+                                                      NULL,
+                                                      error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetCurrentName: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static void
@@ -867,6 +953,15 @@ rfcd_set_filename (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_filename_sync (_rfcd_get_proxy (self),
+                                                  self->priv->remote_id,
+                                                  filename,
+                                                  NULL,
+                                                  error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetFilename: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static void
@@ -877,6 +972,15 @@ rfcd_set_current_folder (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_current_folder_sync (_rfcd_get_proxy (self),
+                                                        self->priv->remote_id,
+                                                        filename,
+                                                        NULL,
+                                                        error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetCurrentFolder: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static void
@@ -887,6 +991,15 @@ rfcd_set_uri (SandboxFileChooserDialog  *sfcd,
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
 
+  if (!sfcd_dbus_wrapper__call_set_uri_sync (_rfcd_get_proxy (self),
+                                             self->priv->remote_id,
+                                             uri,
+                                             NULL,
+                                             error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetUri: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static void
@@ -896,6 +1009,16 @@ rfcd_set_current_folder_uri (SandboxFileChooserDialog  *sfcd,
 {
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (_rfcd_entry_sanity_check (self, error));
+
+  if (!sfcd_dbus_wrapper__call_set_current_folder_uri_sync (_rfcd_get_proxy (self),
+                                                            self->priv->remote_id,
+                                                            uri,
+                                                            NULL,
+                                                            error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetCurrentFolderUri: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 }
 
 static gboolean
@@ -903,11 +1026,19 @@ rfcd_add_shortcut_folder (SandboxFileChooserDialog  *sfcd,
                           const gchar               *folder,
                           GError                   **error)
 {
+  gboolean succeeded = FALSE;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), FALSE);
 
-  gboolean succeeded = FALSE;
-
+  if (!(succeeded = sfcd_dbus_wrapper__call_add_shortcut_folder_sync (_rfcd_get_proxy (self),
+                                                                      self->priv->remote_id,
+                                                                      folder,
+                                                                      NULL,
+                                                                      error)))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.AddShortcutFolder: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return succeeded;
 }
@@ -917,11 +1048,19 @@ rfcd_remove_shortcut_folder (SandboxFileChooserDialog  *sfcd,
                              const gchar               *folder,
                              GError                   **error)
 {
+  gboolean succeeded = FALSE;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), FALSE);
 
-  gboolean succeeded = FALSE;
-
+  if (!(succeeded = sfcd_dbus_wrapper__call_remove_shortcut_folder_sync (_rfcd_get_proxy (self),
+                                                                         self->priv->remote_id,
+                                                                         folder,
+                                                                         NULL,
+                                                                         error)))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.RemoveShortcutFolder: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return succeeded;
 }
@@ -930,10 +1069,27 @@ static GSList *
 rfcd_list_shortcut_folders (SandboxFileChooserDialog *sfcd,
                             GError                    **error)
 {
+  GSList *list  = NULL;
+  gchar **array = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  GSList *list = NULL;
+  if (!sfcd_dbus_wrapper__call_list_shortcut_folders_sync (_rfcd_get_proxy (self),
+                                                           self->priv->remote_id,
+                                                           &array,
+                                                           NULL,
+                                                           error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.ListShortcutFolders: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+  else
+  {
+    gchar *iter = array[0];
+    while (iter)
+      list = g_slist_append (list, iter++);
+    g_strfreev (array);
+  }
 
   return list;
 }
@@ -943,11 +1099,19 @@ rfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *sfcd,
                               const gchar               *uri,
                               GError                   **error)
 {
+  gboolean succeeded = FALSE;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), FALSE);
 
-  gboolean succeeded = FALSE;
-
+  if (!(succeeded = sfcd_dbus_wrapper__call_add_shortcut_folder_uri_sync (_rfcd_get_proxy (self),
+                                                                          self->priv->remote_id,
+                                                                          uri,
+                                                                          NULL,
+                                                                          error)))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.AddShortcutFolderUri: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return succeeded;
 }
@@ -957,11 +1121,19 @@ rfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog *sfcd,
                                  const gchar               *uri,
                                  GError                   **error)
 {
+  gboolean succeeded = FALSE;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), FALSE);
 
-  gboolean succeeded = FALSE;
-
+  if (!(succeeded = sfcd_dbus_wrapper__call_remove_shortcut_folder_uri_sync (_rfcd_get_proxy (self),
+                                                                             self->priv->remote_id,
+                                                                             uri,
+                                                                             NULL,
+                                                                             error)))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.RemoveShortcutFolderUri: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return succeeded;
 }
@@ -970,10 +1142,27 @@ static GSList *
 rfcd_list_shortcut_folder_uris (SandboxFileChooserDialog *sfcd,
                                 GError                    **error)
 {
+  GSList *list  = NULL;
+  gchar **array = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  GSList *list = NULL;
+  if (!sfcd_dbus_wrapper__call_list_shortcut_folder_uris_sync (_rfcd_get_proxy (self),
+                                                               self->priv->remote_id,
+                                                               &array,
+                                                               NULL,
+                                                               error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.ListShortcutFolderUris: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+  else
+  {
+    gchar *iter = array[0];
+    while (iter)
+      list = g_slist_append (list, iter++);
+    g_strfreev (array);
+  }
 
   return list;
 }
@@ -982,11 +1171,19 @@ static gchar *
 rfcd_get_current_name (SandboxFileChooserDialog *sfcd,
                        GError                    **error)
 {
+  gchar *name = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  gchar *name = NULL;
-
+  if (!sfcd_dbus_wrapper__call_get_current_name_sync (_rfcd_get_proxy (self),
+                                                      self->priv->remote_id,
+                                                      &name,
+                                                      NULL,
+                                                      error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetCurrentName: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return name;
 }
@@ -995,32 +1192,48 @@ static gchar *
 rfcd_get_filename (SandboxFileChooserDialog *sfcd,
                    GError                    **error)
 {
+  gchar *filename = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  gchar *name = NULL;
-
   if (!sfcd_dbus_wrapper__call_get_filename_sync (_rfcd_get_proxy (self),
                                                   self->priv->remote_id,
-                                                  &name,
+                                                  &filename,
                                                   NULL,
                                                   error))
   {
-    syslog (LOG_ALERT, "SandboxFileChooserDialog.Present: error when running dialog %s -- %s",
-            sfcd_get_id (sfcd), g_error_get_message (*error));
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetFilename: error when running dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
   }
 
-  return name;
+  return filename;
 }
 
 static GSList *
 rfcd_get_filenames (SandboxFileChooserDialog *sfcd,
                     GError                    **error)
 {
+  GSList *list  = NULL;
+  gchar **array = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  GSList *list = NULL;
+  if (!sfcd_dbus_wrapper__call_get_filenames_sync (_rfcd_get_proxy (self),
+                                                   self->priv->remote_id,
+                                                   &array,
+                                                   NULL,
+                                                   error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetFilenames: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+  else
+  {
+    gchar *iter = array[0];
+    while (iter)
+      list = g_slist_append (list, iter++);
+    g_strfreev (array);
+  }
 
   return list;
 }
@@ -1029,22 +1242,40 @@ static gchar *
 rfcd_get_current_folder (SandboxFileChooserDialog *sfcd,
                          GError                    **error)
 {
+  gchar *filename = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  gchar *folder = NULL;
+  if (!sfcd_dbus_wrapper__call_get_current_folder_sync (_rfcd_get_proxy (self),
+                                                        self->priv->remote_id,
+                                                        &filename,
+                                                        NULL,
+                                                        error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetCurrentFolder: error when running dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
-  return folder;
+  return filename;
 }
 
 static gchar *
 rfcd_get_uri (SandboxFileChooserDialog *sfcd,
               GError                    **error)
 {
+  gchar *uri = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  gchar *uri = NULL;
+  if (!sfcd_dbus_wrapper__call_get_uri_sync (_rfcd_get_proxy (self),
+                                             self->priv->remote_id,
+                                             &uri,
+                                             NULL,
+                                             error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetUri: error when running dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return uri;
 }
@@ -1053,10 +1284,27 @@ static GSList *
 rfcd_get_uris (SandboxFileChooserDialog *sfcd,
                GError                    **error)
 {
+  GSList *list  = NULL;
+  gchar **array = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  GSList *list = NULL;
+  if (!sfcd_dbus_wrapper__call_get_uris_sync (_rfcd_get_proxy (self),
+                                              self->priv->remote_id,
+                                              &array,
+                                              NULL,
+                                              error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetUris: error when querying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+  else
+  {
+    gchar *iter = array[0];
+    while (iter)
+      list = g_slist_append (list, iter++);
+    g_strfreev (array);
+  }
 
   return list;
 }
@@ -1065,10 +1313,19 @@ static gchar *
 rfcd_get_current_folder_uri (SandboxFileChooserDialog *sfcd,
                              GError                    **error)
 {
+  gchar *uri = NULL;
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
   g_return_val_if_fail (_rfcd_entry_sanity_check (self, error), NULL);
 
-  gchar *uri = NULL;
+  if (!sfcd_dbus_wrapper__call_get_current_folder_uri_sync (_rfcd_get_proxy (self),
+                                                            self->priv->remote_id,
+                                                            &uri,
+                                                            NULL,
+                                                            error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.GetCurrentFolderUri: error when running dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
 
   return uri;
 }
