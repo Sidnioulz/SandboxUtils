@@ -443,24 +443,37 @@ lfcd_new_with_remote_parent (const gchar *title,
 }
 
 static void
-lfcd_destroy (SandboxFileChooserDialog *sfcd)
+_lfcd_destroy (SandboxFileChooserDialog *sfcd,
+               gboolean lock)
 {
   LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
   g_return_if_fail (LOCAL_IS_FILE_CHOOSER_DIALOG (self));
+
+  if (lock)
+    g_mutex_lock (&self->priv->stateMutex);
 
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.Destroy: dialog '%s' ('%s')'s reference count has been decreased by one.\n",
               sfcd_get_id (sfcd), sfcd_get_dialog_title (sfcd));
   SandboxFileChooserDialogClass *klass = SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (sfcd);
 
-  g_signal_emit (self,
-                 klass->destroy_signal,
-                 0);
-
   // Interrupt the Run method if needed
   if (lfcd_is_running (sfcd))
     gtk_widget_hide (self->priv->dialog);
 
+  if (lock)
+    g_mutex_unlock (&self->priv->stateMutex);
+
+  g_signal_emit (self,
+                 klass->destroy_signal,
+                 0);
+
   g_object_unref (self);
+}
+
+static void
+lfcd_destroy (SandboxFileChooserDialog *sfcd)
+{
+  _lfcd_destroy (sfcd, TRUE);
 }
 
 SfcdState
@@ -696,7 +709,8 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     // We drop our own reference to get the object destroyed. If no other method
     // is being called, then the object will reach a refcount of 0 and dispose.
     // sfcd_destroy() will signal deletion back to owners of this dialog.
-    sfcd_destroy (sfcd);
+    _lfcd_destroy (sfcd, FALSE);
+    g_mutex_unlock (&self->priv->stateMutex);
   }
   else
   {
@@ -732,14 +746,13 @@ G_GNUC_END_IGNORE_DEPRECATIONS
       self->priv->state = SFCD_DATA_RETRIEVAL;
     }
 
+    g_mutex_unlock (&self->priv->stateMutex);
     g_signal_emit (sfcd,
                    klass->response_signal,
                    0,
                    d->response_id,
                    self->priv->state);
   }
-
-  g_mutex_unlock (&self->priv->stateMutex);
 
   // Done running, we can relax that extra reference that protected our dialog
   g_object_unref (self);
