@@ -10,6 +10,7 @@
  * 
  */
 
+#include <gtk/gtkx.h>
 #include <syslog.h>
 #include <sandboxutils.h>
 
@@ -346,6 +347,90 @@ on_handle_cancel_run (SfcdDbusWrapper        *interface,
 
     if (!error)
       sfcd_dbus_wrapper__complete_cancel_run (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_set_extra_widget (SfcdDbusWrapper        *interface,
+                            GDBusMethodInvocation  *invocation,
+                            const gchar            *dialog_id,
+                            const gulong            widget_id,
+                            gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    GtkWidget *widget = NULL;
+
+    // There is a plug id, create a socket to embed it
+    if (widget_id != 0)
+    {
+      // Set the extra widget through GtkSocket/GtkPlug
+      widget = gtk_socket_new ();
+      sfcd_set_extra_widget (sfcd, widget, &error);
+      
+      //TODO connect to plug signals?
+
+      // Set the remote parent's id to whatever was passed to us
+      gtk_socket_add_id (GTK_SOCKET (widget), widget_id);
+      gtk_widget_show_all (widget);
+    }
+    // Else just unset the widget once and for all
+    else
+    {
+      sfcd_set_extra_widget (sfcd, NULL, &error);
+    }
+
+    if (!error)
+      sfcd_dbus_wrapper__complete_set_extra_widget (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_get_extra_widget (SfcdDbusWrapper        *interface,
+                            GDBusMethodInvocation  *invocation,
+                            const gchar            *dialog_id,
+                            gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    GtkWidget *widget = sfcd_get_extra_widget (sfcd, &error);
+    gulong widget_id = 0;
+
+    if (widget)
+    {
+      if (GTK_IS_SOCKET (widget))
+      {
+        GdkWindow *win = gtk_socket_get_plug_window (GTK_SOCKET (widget));
+        if (win)
+          widget_id = GDK_WINDOW_XID (win);
+      }
+      else
+        syslog (LOG_DEBUG, "SfcdDbusWrapper.Sfcd.OnHandleGetExtraWidget: dialog '%s' does not contain a socket, cannot proceed.\n",
+                dialog_id);
+    }
+
+    if (!error)
+      sfcd_dbus_wrapper__complete_get_extra_widget (interface, invocation, widget_id);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
   }
@@ -1218,6 +1303,8 @@ sfcd_dbus_on_bus_acquired (GDBusConnection *connection,
   g_signal_connect (info->interface, "handle-run", G_CALLBACK (on_handle_run), info);
   g_signal_connect (info->interface, "handle-present", G_CALLBACK (on_handle_present), info);
   g_signal_connect (info->interface, "handle-cancel-run", G_CALLBACK (on_handle_cancel_run), info);
+  g_signal_connect (info->interface, "handle-set-extra-widget", G_CALLBACK (on_handle_set_extra_widget), info);
+  g_signal_connect (info->interface, "handle-get-extra-widget", G_CALLBACK (on_handle_get_extra_widget), info);
   g_signal_connect (info->interface, "handle-set-action", G_CALLBACK (on_handle_set_action), info);
   g_signal_connect (info->interface, "handle-get-action", G_CALLBACK (on_handle_get_action), info);
   g_signal_connect (info->interface, "handle-set-local-only", G_CALLBACK (on_handle_set_local_only), info);

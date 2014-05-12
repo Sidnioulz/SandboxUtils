@@ -43,7 +43,9 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <gtk/gtkx.h>
 #include <syslog.h>
+#include <stdlib.h>
 
 #include "sandboxfilechooserdialogdbusobject.h"
 #include "remotefilechooserdialog.h"
@@ -52,7 +54,8 @@
 
 struct _RemoteFileChooserDialogPrivate
 {
-  GtkWidget             *local_bits;    /* fake container for local widgets */
+  GtkWidget             *local_bits;    /* fake container for extra widget */
+  GtkWidget             *extra_widget;  /* pointer to client-provided widget */
   GtkWindow             *local_parent;  /* transient parent window (allow-none) */
   gboolean              destroy_with_parent;  /* whether to destroy this dialog with its parent (allow-none) */
   gchar                 *remote_id;     /* id of this instance */
@@ -72,6 +75,8 @@ static void                 rfcd_present                       (SandboxFileChoos
 static void                 rfcd_cancel_run                    (SandboxFileChooserDialog *, GError **);
 static void                 rfcd_set_destroy_with_parent       (SandboxFileChooserDialog *, gboolean);
 static gboolean             rfcd_get_destroy_with_parent       (SandboxFileChooserDialog *);
+static void                 rfcd_set_extra_widget              (SandboxFileChooserDialog *, GtkWidget *, GError **);
+static GtkWidget *          rfcd_get_extra_widget              (SandboxFileChooserDialog *, GError **);
 static void                 rfcd_set_action                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
 static GtkFileChooserAction rfcd_get_action                    (SandboxFileChooserDialog *, GError **);
 static void                 rfcd_set_local_only                (SandboxFileChooserDialog *, gboolean, GError **);
@@ -250,6 +255,7 @@ rfcd_init (RemoteFileChooserDialog *self)
   self->priv = rfcd_get_instance_private (self);
 
   self->priv->local_bits    = NULL;
+  self->priv->extra_widget  = NULL;
   self->priv->local_parent  = NULL;
   self->priv->destroy_with_parent  = FALSE;
   self->priv->remote_id     = NULL;
@@ -295,7 +301,7 @@ _rfcd_on_parent_destroyed (GtkWidget *parent,
   RemoteFileChooserDialog *rfcd = user_data;
 
   if (rfcd->priv->destroy_with_parent)
-    rfcd_destroy (rfcd);
+    rfcd_destroy (SANDBOX_FILE_CHOOSER_DIALOG (rfcd));
 }
 
 /**
@@ -338,8 +344,8 @@ rfcd_new_valist (const gchar          *title,
   rfcd->priv->local_parent = parent;
   g_signal_connect (parent, "destroy", (GCallback) _rfcd_on_parent_destroyed, rfcd);
 
-  //TODO get from parent
-  const gchar *parentWinId = "(null)";//NULL;
+  // Local window, if we want to display a custom widget
+  gchar *parentWinId = g_strdup ("(null)");
 
   // Build button list
   GVariantBuilder builder;
@@ -368,6 +374,7 @@ rfcd_new_valist (const gchar          *title,
                                     NULL,
                                     &error);
   g_variant_unref (button_list);
+  g_free (parentWinId);
 
   if (error)
   {
@@ -384,14 +391,8 @@ rfcd_new_valist (const gchar          *title,
   {
     rfcd->priv->cached_title = g_strdup (title);
 
-    // Local window, if we want to display a custom widget
-    //FIXME should I make the parent transient for this?
-    rfcd->priv->local_bits  = gtk_window_new (GTK_WINDOW_POPUP);
-    //gtk_widget_show (rfcd->priv->local_bits);
-
     syslog (LOG_DEBUG, "SandboxFileChooserDialog.New: dialog '%s' ('%s') has just been created.\n",
             rfcd->priv->remote_id, title);
-
 
     RemoteFileChooserDialogClass *klass = REMOTE_FILE_CHOOSER_DIALOG_GET_CLASS (rfcd);
     g_hash_table_insert (klass->instances, rfcd->priv->remote_id, SANDBOX_FILE_CHOOSER_DIALOG (rfcd));
@@ -450,7 +451,6 @@ rfcd_destroy (SandboxFileChooserDialog *sfcd)
 {
   g_return_if_fail (SANDBOX_IS_FILE_CHOOSER_DIALOG (sfcd));
   RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
-  RemoteFileChooserDialogClass *klass = REMOTE_FILE_CHOOSER_DIALOG_GET_CLASS (self);
 
   GError *error = NULL;
   if (!sfcd_dbus_wrapper__call_destroy_sync (_rfcd_get_proxy (self),
@@ -573,6 +573,58 @@ rfcd_get_destroy_with_parent (SandboxFileChooserDialog  *sfcd)
   g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), FALSE);
 
   return self->priv->destroy_with_parent;
+}
+
+static void
+rfcd_set_extra_widget (SandboxFileChooserDialog *sfcd,
+                       GtkWidget                *widget,
+                       GError                   **error)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self));
+
+  if (self->priv->extra_widget)
+  {
+    gtk_container_remove (GTK_CONTAINER (self->priv->local_bits), self->priv->extra_widget);
+    g_object_unref (self->priv->extra_widget);
+  }
+
+  GtkWidget *plug = gtk_plug_new (0);
+  gulong plug_id = gtk_plug_get_id (GTK_PLUG (plug));
+
+  if (!sfcd_dbus_wrapper__call_set_extra_widget_sync (_rfcd_get_proxy (self),
+                                                      self->priv->remote_id,
+                                                      plug_id,
+                                                      NULL,
+                                                      error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SetExtraWidget: error when modifying dialog %s -- %s",
+            sfcd_get_id (sfcd), g_error_get_message (*error));
+
+    gtk_widget_destroy (plug);
+  }
+  else
+  {
+    if (widget)
+    {
+      gtk_container_add (GTK_CONTAINER (plug), widget);
+      gtk_widget_show_all (plug);
+      g_object_ref (widget);
+    }
+
+    self->priv->local_bits = plug;
+    self->priv->extra_widget = widget;
+  }
+}
+
+static GtkWidget *
+rfcd_get_extra_widget (SandboxFileChooserDialog  *sfcd,
+                       GError                   **error)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_val_if_fail (REMOTE_IS_FILE_CHOOSER_DIALOG (self), NULL);
+
+  return self->priv->extra_widget;
 }
 
 /* RUNNING METHODS */
@@ -1046,6 +1098,8 @@ rfcd_class_init (RemoteFileChooserDialogClass *klass)
   sfcd_class->cancel_run = rfcd_cancel_run;
   sfcd_class->set_destroy_with_parent = rfcd_set_destroy_with_parent;
   sfcd_class->get_destroy_with_parent = rfcd_get_destroy_with_parent;
+  sfcd_class->set_extra_widget = rfcd_set_extra_widget;
+  sfcd_class->get_extra_widget = rfcd_get_extra_widget;
   sfcd_class->set_action = rfcd_set_action;
   sfcd_class->get_action = rfcd_get_action;
   sfcd_class->set_local_only = rfcd_set_local_only;

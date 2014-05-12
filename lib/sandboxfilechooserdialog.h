@@ -127,6 +127,8 @@ struct _SandboxFileChooserDialogClass
   void                 (*cancel_run)                    (SandboxFileChooserDialog *, GError **);
   void                 (*set_destroy_with_parent)       (SandboxFileChooserDialog *, gboolean);
   gboolean             (*get_destroy_with_parent)       (SandboxFileChooserDialog *);
+  void                 (*set_extra_widget)              (SandboxFileChooserDialog *, GtkWidget *, GError **);
+  GtkWidget *          (*get_extra_widget)              (SandboxFileChooserDialog *, GError **);
   void                 (*set_action)                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
   GtkFileChooserAction (*get_action)                    (SandboxFileChooserDialog *, GError **);
   void                 (*set_local_only)                (SandboxFileChooserDialog *, gboolean, GError **);
@@ -219,6 +221,16 @@ sfcd_set_destroy_with_parent       (SandboxFileChooserDialog  *dialog,
 
 gboolean
 sfcd_get_destroy_with_parent       (SandboxFileChooserDialog  *dialog);
+
+void
+sfcd_set_extra_widget              (SandboxFileChooserDialog  *dialog,
+                                    GtkWidget                 *widget,
+                                    GError                   **error);
+
+GtkWidget *
+sfcd_get_extra_widget              (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
+
 void
 sfcd_set_action                    (SandboxFileChooserDialog  *dialog,
                                     GtkFileChooserAction       action,
@@ -403,17 +415,6 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
  *   char *	gtk_file_chooser_get_preview_filename ()
  *   char *	gtk_file_chooser_get_preview_uri ()
  *   GFile *	gtk_file_chooser_get_preview_file ()
- * _____________________________________________________________________________
- * API CHANGE: replacing the extra widget by ???
- * 
- * I confess I don't know what to do with the extra widget. A client could
- * generate their own widget locally that does not have any access to filenames
- * or the dialog and that widget could be automagically composed without the
- * window of the actual dialog, but that only addresses widgets that interact 
- * exclusively with the app and not with the contents of the dialog.
- * 
- *   void	gtk_file_chooser_set_extra_widget ()
- *   GtkWidget *	gtk_file_chooser_get_extra_widget ()
  * _____________________________________________________________________________
  * API CHANGE: modify the select family a bit. Limit it to the config state, and
  * add a select_if_exists family of methods for apps to preselect files without

@@ -750,6 +750,57 @@ sfcd_cancel_run (SandboxFileChooserDialog  *self,
 
 /* CONFIGURATION METHODS */
 /**
+ * sfcd_set_extra_widget:
+ * @dialog: a #SandboxFileChooserDialog
+ * @widget: the extra #GtkWidget controlled by your application
+ * @error: a placeholder for a #GError
+ * 
+ * Sets an application-supplied widget to provide extra options to the user.
+ * Note that this widget does not have access to the internal structure of the
+ * #SandboxFileChooserDialog or the underlying file system when sandboxed; it
+ * runs with the privileges of your own application.
+ *
+ * This method can be called from any #SfcdState. It is equivalent to
+ * gtk_file_chooser_set_extra_widget() in the GTK+ API. Do remember to check if
+ * @error is set after running this method.
+ *
+ * Since: 0.5
+ **/
+void
+sfcd_set_extra_widget (SandboxFileChooserDialog  *self,
+                       GtkWidget                 *widget,
+                       GError                   **error)
+{
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
+
+  SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->set_extra_widget (self, widget, error);
+}
+
+/**
+ * sfcd_get_extra_widget:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Gets the #GtkWidget that was added to @dialog with sfcd_set_extra_widget().
+ *
+ * This method can be called from any #SfcdState. It is equivalent to
+ * gtk_file_chooser_get_extra_widget() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is undefined.
+ *
+ * Return value: the extra application-provided widget attached to @dialog
+ *
+ * Since: 0.5
+ **/
+GtkWidget *
+sfcd_get_extra_widget (SandboxFileChooserDialog *self,
+                       GError                  **error)
+{
+  g_return_val_if_fail (_sfcd_entry_sanity_check (self, error), NULL);
+  
+  return SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->get_extra_widget (self, error);
+}
+
+/**
  * sfcd_set_action:
  * @dialog: a #SandboxFileChooserDialog
  * @action: the #GtkFileChooserAction that the dialog is performing

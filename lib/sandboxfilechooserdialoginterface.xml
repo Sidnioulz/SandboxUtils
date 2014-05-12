@@ -34,6 +34,14 @@
 		 <method name='CancelRun'>
 			 <arg type='s' name='dialog_id' direction='in' />
 		 </method>
+		 <method name='SetExtraWidget'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='t' name='widget_id' direction='in' />
+		 </method>
+		 <method name='GetExtraWidget'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='t' name='widget_id' direction='out' />
+		 </method>
 		 <method name='SetAction'>
 			 <arg type='s' name='dialog_id' direction='in' />
 			 <arg type='i' name='action' direction='in' />

@@ -3,7 +3,7 @@
 - Design new preview widgets, new extra widgets, new autocompletion, etc. (see sfcd.h)
 - Do signal management and property passing in SFCD
 - Write Remote FCD
-- Really, if the dialog receives a destroyed signal I should kill the SFCD
+- Make the lib Wayland-compatible by disabling extra widgets on Wayland
 
 # Server
 - Client management

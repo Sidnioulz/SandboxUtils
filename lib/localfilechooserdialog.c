@@ -46,7 +46,9 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <gtk/gtkx.h>
 #include <syslog.h>
+#include <stdlib.h>
 
 #include "localfilechooserdialog.h"
 #include "sandboxutilsmarshals.h"
@@ -72,9 +74,11 @@ static gboolean             lfcd_is_running                    (SandboxFileChoos
 static const gchar *        lfcd_get_id                        (SandboxFileChooserDialog *);
 static void                 lfcd_run                           (SandboxFileChooserDialog *, GError **);
 static void                 lfcd_present                       (SandboxFileChooserDialog *, GError **);
+static void                 lfcd_cancel_run                    (SandboxFileChooserDialog *, GError **);
 static void                 lfcd_set_destroy_with_parent       (SandboxFileChooserDialog *, gboolean);
 static gboolean             lfcd_get_destroy_with_parent       (SandboxFileChooserDialog *);
-static void                 lfcd_cancel_run                    (SandboxFileChooserDialog *, GError **);
+static void                 lfcd_set_extra_widget              (SandboxFileChooserDialog *, GtkWidget *, GError **);
+static GtkWidget *          lfcd_get_extra_widget              (SandboxFileChooserDialog *, GError **);
 static void                 lfcd_set_action                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
 static GtkFileChooserAction lfcd_get_action                    (SandboxFileChooserDialog *, GError **);
 static void                 lfcd_set_local_only                (SandboxFileChooserDialog *, gboolean, GError **);
@@ -251,9 +255,10 @@ lfcd_new_valist (const gchar          *title,
 
   g_object_ref_sink (lfcd->priv->dialog);
 
-  // Set the remote parent's id to whatever was passed to us
   if (parentWinId)
+  {
     lfcd->priv->remote_parent = g_strdup (parentWinId);
+  }
 
   // Connecting signals here - we do not connect to signals like close or destroy
   // that occur only when we are already cleaning up the dialog. Instead we emit
@@ -877,6 +882,43 @@ lfcd_cancel_run (SandboxFileChooserDialog  *sfcd,
   }
 
   g_mutex_unlock (&self->priv->stateMutex);
+}
+
+static void
+lfcd_set_extra_widget (SandboxFileChooserDialog  *sfcd,
+                       GtkWidget                 *widget,
+                       GError                   **error)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_lfcd_entry_sanity_check (self, error));
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  gtk_file_chooser_set_extra_widget (GTK_FILE_CHOOSER (self->priv->dialog), widget);
+
+  syslog (LOG_DEBUG,
+          "SandboxFileChooserDialog.SetExtraWidget: dialog '%s' ('%s') has been assigned a new extra widget.\n",
+          sfcd_get_id (sfcd),
+          sfcd_get_dialog_title (sfcd));
+
+  g_mutex_unlock (&self->priv->stateMutex);
+}
+
+static GtkWidget *
+lfcd_get_extra_widget (SandboxFileChooserDialog *sfcd,
+                       GError                  **error)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+
+  g_return_val_if_fail (_lfcd_entry_sanity_check (self, error), NULL);
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  GtkWidget *result = gtk_file_chooser_get_extra_widget (GTK_FILE_CHOOSER (self->priv->dialog));
+
+  g_mutex_unlock (&self->priv->stateMutex);
+
+  return result;
 }
 
 static void
@@ -2204,6 +2246,8 @@ lfcd_class_init (LocalFileChooserDialogClass *klass)
   sfcd_class->cancel_run = lfcd_cancel_run;
   sfcd_class->set_destroy_with_parent = lfcd_set_destroy_with_parent;
   sfcd_class->get_destroy_with_parent = lfcd_get_destroy_with_parent;
+  sfcd_class->set_extra_widget = lfcd_set_extra_widget;
+  sfcd_class->get_extra_widget = lfcd_get_extra_widget;
   sfcd_class->set_action = lfcd_set_action;
   sfcd_class->get_action = lfcd_get_action;
   sfcd_class->set_local_only = lfcd_set_local_only;

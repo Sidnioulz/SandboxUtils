@@ -49,9 +49,27 @@ on_response (SandboxFileChooserDialog *sfcd,
     }
     else
     {
-      GFile *file = g_file_new_for_path (path);
-      example_app_window_open (win, file);
-      g_free (path);
+      GtkWidget *extra = sfcd_get_extra_widget (dialog, &error);
+      if (error)
+      {
+        g_printf ("Get Widget Error: %s\n", error->message);
+        g_error_free (error); //TODO
+
+        GFile *file = g_file_new_for_path (path);
+        example_app_window_open (win, file);
+        g_free (path);
+      }
+      else
+      {
+        const gchar *font = gtk_font_button_get_font_name (GTK_FONT_BUTTON (extra));
+        PangoFontDescription *font_desc = pango_font_description_from_string (font);
+
+        GFile *file = g_file_new_for_path (path);
+        example_app_window_open_with_font (win, file, font_desc);
+
+        g_free (path);
+        pango_font_description_free (font_desc); 
+      }
     }
   }
 }
@@ -102,6 +120,15 @@ on_open_clicked (GtkButton *button,
           if (error)
           {
             g_printf ("Run Error: %s\n", error->message);
+            g_error_free (error); //TODO
+          }
+
+          error = NULL;
+          GtkWidget *extra = gtk_font_button_new ();
+          sfcd_set_extra_widget (dialog, extra, &error);
+          if (error)
+          {
+            g_printf ("Set Widget Error: %s\n", error->message);
             g_error_free (error); //TODO
           }
         }
@@ -299,8 +326,9 @@ example_app_window_new (ExampleApp *app)
 }
 
 void
-example_app_window_open (ExampleAppWindow *win,
-                         GFile            *file)
+example_app_window_open_with_font (ExampleAppWindow     *win,
+                                   GFile                *file,
+                                   PangoFontDescription *desc)
 {
         ExampleAppWindowPrivate *priv = example_app_window_get_instance_private (win);
         gchar *basename;
@@ -326,8 +354,19 @@ example_app_window_open (ExampleAppWindow *win,
 
                 buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (view));
                 gtk_text_buffer_set_text (buffer, contents, length);
+
+                if (desc)
+                  gtk_widget_override_font (view, desc);
+
                 g_free (contents);
         }
 
         g_free (basename);
+}
+
+void
+example_app_window_open (ExampleAppWindow *win,
+                         GFile            *file)
+{
+        example_app_window_open_with_font (win, file, NULL);
 }

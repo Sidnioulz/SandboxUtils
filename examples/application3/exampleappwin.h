@@ -17,6 +17,9 @@ GType                   example_app_window_get_type     (void);
 ExampleAppWindow       *example_app_window_new          (ExampleApp *app);
 void                    example_app_window_open         (ExampleAppWindow *win,
                                                          GFile            *file);
+void                    example_app_window_open_with_font (ExampleAppWindow     *win,
+                                                           GFile                *file,
+                                                           PangoFontDescription *desc);
 
 
 #endif /* __EXAMPLEAPPWIN_H */
