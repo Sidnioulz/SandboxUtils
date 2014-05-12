@@ -42,6 +42,28 @@
 			 <arg type='s' name='dialog_id' direction='in' />
 			 <arg type='t' name='widget_id' direction='out' />
 		 </method>
+		 <method name='SelectFilename'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='filename' direction='in' />
+		 </method>
+		 <method name='UnselectFilename'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='filename' direction='in' />
+		 </method>
+		 <method name='SelectAll'>
+			 <arg type='s' name='dialog_id' direction='in' />
+		 </method>
+		 <method name='UnselectAll'>
+			 <arg type='s' name='dialog_id' direction='in' />
+		 </method>
+		 <method name='SelectUri'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='uri' direction='in' />
+		 </method>
+		 <method name='UnselectUri'>
+			 <arg type='s' name='dialog_id' direction='in' />
+			 <arg type='s' name='uri' direction='in' />
+		 </method>
 		 <method name='SetAction'>
 			 <arg type='s' name='dialog_id' direction='in' />
 			 <arg type='i' name='action' direction='in' />

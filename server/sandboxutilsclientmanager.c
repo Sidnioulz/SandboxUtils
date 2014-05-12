@@ -23,7 +23,7 @@ sandbox_utils_client_new ()
   SandboxUtilsClient *cli = g_malloc (sizeof (SandboxUtilsClient));
   memset (cli, 0, sizeof (SandboxUtilsClient));
 
-  cli->dialogs = g_hash_table_new (g_str_hash, g_str_equal);
+  cli->dialogs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   g_mutex_init (&cli->dialogsMutex);
 
   return cli;

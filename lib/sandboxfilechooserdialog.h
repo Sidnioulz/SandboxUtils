@@ -127,6 +127,12 @@ struct _SandboxFileChooserDialogClass
   void                 (*cancel_run)                    (SandboxFileChooserDialog *, GError **);
   void                 (*set_destroy_with_parent)       (SandboxFileChooserDialog *, gboolean);
   gboolean             (*get_destroy_with_parent)       (SandboxFileChooserDialog *);
+  void                 (*select_filename)               (SandboxFileChooserDialog *, const gchar *, GError **);
+  void                 (*unselect_filename)             (SandboxFileChooserDialog *, const gchar *, GError **);
+  void                 (*select_all)                    (SandboxFileChooserDialog *, GError **);
+  void                 (*unselect_all)                  (SandboxFileChooserDialog *, GError **);
+  void                 (*select_uri)                    (SandboxFileChooserDialog *, const gchar *, GError **);
+  void                 (*unselect_uri)                  (SandboxFileChooserDialog *, const gchar *, GError **);
   void                 (*set_extra_widget)              (SandboxFileChooserDialog *, GtkWidget *, GError **);
   GtkWidget *          (*get_extra_widget)              (SandboxFileChooserDialog *, GError **);
   void                 (*set_action)                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
@@ -229,6 +235,34 @@ sfcd_set_extra_widget              (SandboxFileChooserDialog  *dialog,
 
 GtkWidget *
 sfcd_get_extra_widget              (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
+
+void
+sfcd_select_filename               (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *filename,
+                                    GError                   **error);
+
+void
+sfcd_unselect_filename             (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *filename,
+                                    GError                   **error);
+
+void
+sfcd_select_all                    (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
+
+void
+sfcd_unselect_all                  (SandboxFileChooserDialog  *dialog,
+                                    GError                   **error);
+
+void
+sfcd_select_uri                    (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *uri,
+                                    GError                   **error);
+
+void
+sfcd_unselect_uri                  (SandboxFileChooserDialog  *dialog,
+                                    const gchar               *uri,
                                     GError                   **error);
 
 void

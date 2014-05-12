@@ -169,8 +169,6 @@ on_handle_destroy_signal (SandboxFileChooserDialog *sfcd,
   SandboxUtilsClient         *cli        = info->client;
   const gchar                *dialog_id  = sfcd_get_id (sfcd);
 
-//FIXME  g_hash_table_remove (cli->dialogs, dialog_id);
-
   if ((sfcd = _sfcd_dbus_wrapper_lookup_and_remove (cli, dialog_id)) != NULL)
   {
     sfcd_dbus_wrapper__emit_destroy (info->interface, dialog_id);
@@ -431,6 +429,160 @@ on_handle_get_extra_widget (SfcdDbusWrapper        *interface,
 
     if (!error)
       sfcd_dbus_wrapper__complete_get_extra_widget (interface, invocation, widget_id);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_select_filename (SfcdDbusWrapper        *interface,
+                           GDBusMethodInvocation  *invocation,
+                           const gchar            *dialog_id,
+                           const gchar            *filename,
+                           gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    sfcd_select_filename (sfcd, filename, &error);
+
+    if (!error)
+      sfcd_dbus_wrapper__complete_select_filename (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_unselect_filename (SfcdDbusWrapper        *interface,
+                             GDBusMethodInvocation  *invocation,
+                             const gchar            *dialog_id,
+                             const gchar            *filename,
+                             gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    sfcd_unselect_filename (sfcd, filename, &error);
+
+    if (!error)
+      sfcd_dbus_wrapper__complete_unselect_filename (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_select_all (SfcdDbusWrapper        *interface,
+                      GDBusMethodInvocation  *invocation,
+                      const gchar            *dialog_id,
+                      gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    sfcd_select_all (sfcd, &error);
+
+    if (!error)
+      sfcd_dbus_wrapper__complete_select_all (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_unselect_all (SfcdDbusWrapper        *interface,
+                        GDBusMethodInvocation  *invocation,
+                        const gchar            *dialog_id,
+                        gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    sfcd_unselect_all (sfcd, &error);
+
+    if (!error)
+      sfcd_dbus_wrapper__complete_unselect_all (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_select_uri (SfcdDbusWrapper        *interface,
+                      GDBusMethodInvocation  *invocation,
+                      const gchar            *dialog_id,
+                      const gchar            *uri,
+                      gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    sfcd_select_uri (sfcd, uri, &error);
+
+    if (!error)
+      sfcd_dbus_wrapper__complete_select_uri (interface, invocation);
+    else
+      _sfcd_dbus_wrapper_return_error (invocation, error);
+  }
+  _sfcd_dbus_wrapper_lookup_finished (invocation, sfcd, dialog_id);
+
+  return TRUE;
+}
+
+static gboolean
+on_handle_unselect_uri (SfcdDbusWrapper        *interface,
+                        GDBusMethodInvocation  *invocation,
+                        const gchar            *dialog_id,
+                        const gchar            *uri,
+                        gpointer                user_data)
+{
+  SandboxFileChooserDialog   *sfcd       = NULL;
+  SfcdDbusWrapperInfo        *info       = user_data;
+  SandboxUtilsClient         *cli        = info->client;
+  GError                     *error      = NULL;
+
+  if ((sfcd = _sfcd_dbus_wrapper_lookup (cli, dialog_id)) != NULL)
+  {
+    sfcd_unselect_uri (sfcd, uri, &error);
+
+    if (!error)
+      sfcd_dbus_wrapper__complete_unselect_uri (interface, invocation);
     else
       _sfcd_dbus_wrapper_return_error (invocation, error);
   }
@@ -1283,8 +1435,6 @@ on_handle_get_current_folder_uri (SfcdDbusWrapper        *interface,
   return TRUE;
 }
 
-
-
 static void
 sfcd_dbus_on_bus_acquired (GDBusConnection *connection,
                            const gchar     *name,
@@ -1305,6 +1455,12 @@ sfcd_dbus_on_bus_acquired (GDBusConnection *connection,
   g_signal_connect (info->interface, "handle-cancel-run", G_CALLBACK (on_handle_cancel_run), info);
   g_signal_connect (info->interface, "handle-set-extra-widget", G_CALLBACK (on_handle_set_extra_widget), info);
   g_signal_connect (info->interface, "handle-get-extra-widget", G_CALLBACK (on_handle_get_extra_widget), info);
+  g_signal_connect (info->interface, "handle-select-filename", G_CALLBACK (on_handle_select_filename), info);
+  g_signal_connect (info->interface, "handle-select-filename", G_CALLBACK (on_handle_unselect_filename), info);
+  g_signal_connect (info->interface, "handle-select-all", G_CALLBACK (on_handle_select_all), info);
+  g_signal_connect (info->interface, "handle-unselect-all", G_CALLBACK (on_handle_unselect_all), info);
+  g_signal_connect (info->interface, "handle-select-uri", G_CALLBACK (on_handle_select_uri), info);
+  g_signal_connect (info->interface, "handle-unselect-uri", G_CALLBACK (on_handle_unselect_uri), info);
   g_signal_connect (info->interface, "handle-set-action", G_CALLBACK (on_handle_set_action), info);
   g_signal_connect (info->interface, "handle-get-action", G_CALLBACK (on_handle_get_action), info);
   g_signal_connect (info->interface, "handle-set-local-only", G_CALLBACK (on_handle_set_local_only), info);
@@ -1367,7 +1523,6 @@ sfcd_dbus_on_name_lost (GDBusConnection *connection,
   //  exit (EXIT_FAILURE);
 }
 
-
 static SfcdDbusWrapperInfo *
 sfcd_dbus_info_new ()
 {
@@ -1409,12 +1564,11 @@ void
 sfcd_dbus_wrapper_dbus_shutdown (gpointer data)
 {
   SfcdDbusWrapperInfo *info = data;
-
   //TODO error checking?
 
   // Clean up server
   g_bus_unown_name (info->owner_id);
-  //FIXME find how to do this with my new interface g_dbus_node_info_unref (info->introspection_data);
+  g_object_unref (info->interface);
   
   //TODO notify client of interface shutdown
   info->client = NULL;

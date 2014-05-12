@@ -79,6 +79,12 @@ static void                 lfcd_set_destroy_with_parent       (SandboxFileChoos
 static gboolean             lfcd_get_destroy_with_parent       (SandboxFileChooserDialog *);
 static void                 lfcd_set_extra_widget              (SandboxFileChooserDialog *, GtkWidget *, GError **);
 static GtkWidget *          lfcd_get_extra_widget              (SandboxFileChooserDialog *, GError **);
+static void                 lfcd_select_filename               (SandboxFileChooserDialog *, const gchar *, GError **);
+static void                 lfcd_unselect_filename             (SandboxFileChooserDialog *, const gchar *, GError **);
+static void                 lfcd_select_all                    (SandboxFileChooserDialog *, GError **);
+static void                 lfcd_unselect_all                  (SandboxFileChooserDialog *, GError **);
+static void                 lfcd_select_uri                    (SandboxFileChooserDialog *, const gchar *, GError **);
+static void                 lfcd_unselect_uri                  (SandboxFileChooserDialog *, const gchar *, GError **);
 static void                 lfcd_set_action                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
 static GtkFileChooserAction lfcd_get_action                    (SandboxFileChooserDialog *, GError **);
 static void                 lfcd_set_local_only                (SandboxFileChooserDialog *, gboolean, GError **);
@@ -149,6 +155,9 @@ lfcd_dispose (GObject* object)
     g_object_unref (self->priv->dialog);
     gtk_widget_destroy (self->priv->dialog);
   }
+
+  if (self->priv->remote_parent)
+    g_free (self->priv->remote_parent);
 
   syslog (LOG_DEBUG, "SandboxFileChooserDialog.Dispose: dialog '%s' was disposed.\n",
               self->priv->id);
@@ -327,7 +336,7 @@ lfcd_new_variant (const gchar          *title,
   g_variant_get (button_list, "a{sv}", &iter);
 	while ((item = g_variant_iter_next_value (iter)))
   {
-    const gchar *key;
+    gchar *key;
     GVariant *value;
 
     g_variant_get (item, "{sv}", &key, &value);
@@ -336,7 +345,9 @@ lfcd_new_variant (const gchar          *title,
     else
       syslog (LOG_CRIT, "SandboxFileChooserDialog.New: dialog '%s' will not contain button '%s':'%d' for security reasons (acceptance state with label not known to convey acceptance meaning). If you think this is a bug, please report it indicating the application used and your current locale settings.",
               lfcd->priv->id, key, g_variant_get_int32 (value));
+    g_free (key);
   }
+  g_variant_iter_free (iter);
 
   return SANDBOX_FILE_CHOOSER_DIALOG (lfcd);
 }
@@ -919,6 +930,268 @@ lfcd_get_extra_widget (SandboxFileChooserDialog *sfcd,
   g_mutex_unlock (&self->priv->stateMutex);
 
   return result;
+}
+
+static void
+lfcd_select_filename (SandboxFileChooserDialog  *sfcd,
+                      const gchar               *filename,
+                      GError                   **error)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_lfcd_entry_sanity_check (self, error));
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (sfcd))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SelectFilename: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 sfcd_get_id (sfcd),
+                 sfcd_get_dialog_title (sfcd),
+                 filename);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SelectFilename: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              sfcd_get_id (sfcd),
+              sfcd_get_dialog_title (sfcd));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_select_filename (GTK_FILE_CHOOSER (self->priv->dialog), filename);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SelectFilename: dialog '%s' ('%s')'s file named '%s' has been selected (provided it exists).\n",
+            sfcd_get_id (sfcd),
+            sfcd_get_dialog_title (sfcd),
+            filename);
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+}
+
+static void
+lfcd_unselect_filename (SandboxFileChooserDialog  *sfcd,
+                        const gchar               *filename,
+                        GError                   **error)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_lfcd_entry_sanity_check (self, error));
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (sfcd))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.UnselectFilename: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 sfcd_get_id (sfcd),
+                 sfcd_get_dialog_title (sfcd),
+                 filename);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.UnselectFilename: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              sfcd_get_id (sfcd),
+              sfcd_get_dialog_title (sfcd));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_unselect_filename (GTK_FILE_CHOOSER (self->priv->dialog), filename);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.UnselectFilename: dialog '%s' ('%s')'s file named '%s' has been unselected (provided it exists).\n",
+            sfcd_get_id (sfcd),
+            sfcd_get_dialog_title (sfcd),
+            filename);
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+}
+static void
+lfcd_select_all (SandboxFileChooserDialog  *sfcd,
+                 GError                   **error)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_lfcd_entry_sanity_check (self, error));
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (sfcd))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SelectAll: dialog '%s' ('%s') is already running and cannot be modified.\n",
+                 sfcd_get_id (sfcd),
+                 sfcd_get_dialog_title (sfcd));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SelectAll: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              sfcd_get_id (sfcd),
+              sfcd_get_dialog_title (sfcd));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_select_all (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SelectAll: dialog '%s' ('%s')'s current folder has been selected.\n",
+            sfcd_get_id (sfcd),
+            sfcd_get_dialog_title (sfcd));
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+}
+
+static void
+lfcd_unselect_all (SandboxFileChooserDialog  *sfcd,
+                   GError                   **error)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_lfcd_entry_sanity_check (self, error));
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (sfcd))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.UnselectAll: dialog '%s' ('%s') is already running and cannot be modified.\n",
+                 sfcd_get_id (sfcd),
+                 sfcd_get_dialog_title (sfcd));
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.UnselectAll: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              sfcd_get_id (sfcd),
+              sfcd_get_dialog_title (sfcd));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_unselect_all (GTK_FILE_CHOOSER (self->priv->dialog));
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.UnselectAll: dialog '%s' ('%s')'s current folder has been unselected.\n",
+            sfcd_get_id (sfcd),
+            sfcd_get_dialog_title (sfcd));
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+}
+static void
+lfcd_select_uri (SandboxFileChooserDialog  *sfcd,
+                 const gchar               *uri,
+                 GError                   **error)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_lfcd_entry_sanity_check (self, error));
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (sfcd))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.SelectUri: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 sfcd_get_id (sfcd),
+                 sfcd_get_dialog_title (sfcd),
+                 uri);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.SelectUri: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              sfcd_get_id (sfcd),
+              sfcd_get_dialog_title (sfcd));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_select_uri (GTK_FILE_CHOOSER (self->priv->dialog), uri);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.SelectUri: dialog '%s' ('%s')'s uri '%s' has been selected (provided it exists).\n",
+            sfcd_get_id (sfcd),
+            sfcd_get_dialog_title (sfcd),
+            uri);
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
+}
+
+static void
+lfcd_unselect_uri (SandboxFileChooserDialog  *sfcd,
+                   const gchar               *uri,
+                   GError                   **error)
+{
+  LocalFileChooserDialog *self = LOCAL_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_lfcd_entry_sanity_check (self, error));
+
+  g_mutex_lock (&self->priv->stateMutex);
+
+  if (sfcd_is_running (sfcd))
+  {
+    g_set_error (error,
+                 g_quark_from_static_string (SFCD_ERROR_DOMAIN),
+                 SFCD_ERROR_FORBIDDEN_CHANGE,
+                 "SandboxFileChooserDialog.UnselectUri: dialog '%s' ('%s') is already running and cannot be modified (parameter was '%s').\n",
+                 sfcd_get_id (sfcd),
+                 sfcd_get_dialog_title (sfcd),
+                 uri);
+
+      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+  }
+  else
+  {
+    if (self->priv->state == SFCD_DATA_RETRIEVAL)
+    {
+      syslog (LOG_DEBUG,
+              "SandboxFileChooserDialog.UnselectUri: dialog '%s' ('%s') being put back into 'configuration' state.\n",
+              sfcd_get_id (sfcd),
+              sfcd_get_dialog_title (sfcd));
+    }
+
+    self->priv->state = SFCD_CONFIGURATION;
+    gtk_file_chooser_unselect_uri (GTK_FILE_CHOOSER (self->priv->dialog), uri);
+
+    syslog (LOG_DEBUG,
+            "SandboxFileChooserDialog.UnselectUri: dialog '%s' ('%s')'s uri '%s' has been unselected (provided it exists).\n",
+            sfcd_get_id (sfcd),
+            sfcd_get_dialog_title (sfcd),
+            uri);
+  }
+
+  g_mutex_unlock (&self->priv->stateMutex);
 }
 
 static void
@@ -2248,6 +2521,12 @@ lfcd_class_init (LocalFileChooserDialogClass *klass)
   sfcd_class->get_destroy_with_parent = lfcd_get_destroy_with_parent;
   sfcd_class->set_extra_widget = lfcd_set_extra_widget;
   sfcd_class->get_extra_widget = lfcd_get_extra_widget;
+  sfcd_class->select_filename = lfcd_select_filename;
+  sfcd_class->unselect_filename = lfcd_unselect_filename;
+  sfcd_class->select_all = lfcd_select_all;
+  sfcd_class->unselect_all = lfcd_unselect_all;
+  sfcd_class->select_uri = lfcd_select_uri;
+  sfcd_class->unselect_uri = lfcd_unselect_uri;
   sfcd_class->set_action = lfcd_set_action;
   sfcd_class->get_action = lfcd_get_action;
   sfcd_class->set_local_only = lfcd_set_local_only;

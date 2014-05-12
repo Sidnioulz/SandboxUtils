@@ -77,6 +77,12 @@ static void                 rfcd_set_destroy_with_parent       (SandboxFileChoos
 static gboolean             rfcd_get_destroy_with_parent       (SandboxFileChooserDialog *);
 static void                 rfcd_set_extra_widget              (SandboxFileChooserDialog *, GtkWidget *, GError **);
 static GtkWidget *          rfcd_get_extra_widget              (SandboxFileChooserDialog *, GError **);
+static void                 rfcd_select_filename               (SandboxFileChooserDialog *, const gchar *, GError **);
+static void                 rfcd_unselect_filename             (SandboxFileChooserDialog *, const gchar *, GError **);
+static void                 rfcd_select_all                    (SandboxFileChooserDialog *, GError **);
+static void                 rfcd_unselect_all                  (SandboxFileChooserDialog *, GError **);
+static void                 rfcd_select_uri                    (SandboxFileChooserDialog *, const gchar *, GError **);
+static void                 rfcd_unselect_uri                  (SandboxFileChooserDialog *, const gchar *, GError **);
 static void                 rfcd_set_action                    (SandboxFileChooserDialog *, GtkFileChooserAction, GError **);
 static GtkFileChooserAction rfcd_get_action                    (SandboxFileChooserDialog *, GError **);
 static void                 rfcd_set_local_only                (SandboxFileChooserDialog *, gboolean, GError **);
@@ -681,6 +687,116 @@ rfcd_cancel_run (SandboxFileChooserDialog  *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.CancelRun: error when cancelling the run of dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+}
+
+static void
+rfcd_select_filename (SandboxFileChooserDialog  *sfcd,
+                      const gchar               *filename,
+                      GError                   **error)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_rfcd_entry_sanity_check (self, error));
+
+  if (!sfcd_dbus_wrapper__call_select_filename_sync (_rfcd_get_proxy (self),
+                                                     self->priv->remote_id,
+                                                     filename,
+                                                     NULL,
+                                                     error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SelectFilename: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+}
+
+static void
+rfcd_unselect_filename (SandboxFileChooserDialog  *sfcd,
+                        const gchar               *filename,
+                        GError                   **error)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_rfcd_entry_sanity_check (self, error));
+
+  if (!sfcd_dbus_wrapper__call_unselect_filename_sync (_rfcd_get_proxy (self),
+                                                       self->priv->remote_id,
+                                                       filename,
+                                                       NULL,
+                                                       error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.UnselectFilename: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+}
+
+static void
+rfcd_select_all (SandboxFileChooserDialog  *sfcd,
+                 GError                   **error)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_rfcd_entry_sanity_check (self, error));
+
+  if (!sfcd_dbus_wrapper__call_select_all_sync (_rfcd_get_proxy (self),
+                                                self->priv->remote_id,
+                                                NULL,
+                                                error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SelectAll: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+}
+
+static void
+rfcd_unselect_all (SandboxFileChooserDialog  *sfcd,
+                   GError                   **error)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_rfcd_entry_sanity_check (self, error));
+
+  if (!sfcd_dbus_wrapper__call_unselect_all_sync (_rfcd_get_proxy (self),
+                                                  self->priv->remote_id,
+                                                  NULL,
+                                                  error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.UnselectAll: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+}
+
+static void
+rfcd_select_uri (SandboxFileChooserDialog  *sfcd,
+                 const gchar               *uri,
+                 GError                   **error)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_rfcd_entry_sanity_check (self, error));
+
+  if (!sfcd_dbus_wrapper__call_select_uri_sync (_rfcd_get_proxy (self),
+                                                self->priv->remote_id,
+                                                uri,
+                                                NULL,
+                                                error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.SelectUri: error when modifying dialog %s -- %s",
+            self->priv->remote_id, g_error_get_message (*error));
+  }
+}
+
+static void
+rfcd_unselect_uri (SandboxFileChooserDialog  *sfcd,
+                   const gchar               *uri,
+                   GError                   **error)
+{
+  RemoteFileChooserDialog *self = REMOTE_FILE_CHOOSER_DIALOG (sfcd);
+  g_return_if_fail (_rfcd_entry_sanity_check (self, error));
+
+  if (!sfcd_dbus_wrapper__call_unselect_uri_sync (_rfcd_get_proxy (self),
+                                                  self->priv->remote_id,
+                                                  uri,
+                                                  NULL,
+                                                  error))
+  {
+    syslog (LOG_ALERT, "SandboxFileChooserDialog.UnselectUri: error when modifying dialog %s -- %s",
             self->priv->remote_id, g_error_get_message (*error));
   }
 }
@@ -1360,6 +1476,12 @@ rfcd_class_init (RemoteFileChooserDialogClass *klass)
   sfcd_class->get_destroy_with_parent = rfcd_get_destroy_with_parent;
   sfcd_class->set_extra_widget = rfcd_set_extra_widget;
   sfcd_class->get_extra_widget = rfcd_get_extra_widget;
+  sfcd_class->select_filename = rfcd_select_filename;
+  sfcd_class->unselect_filename = rfcd_unselect_filename;
+  sfcd_class->select_all = rfcd_select_all;
+  sfcd_class->unselect_all = rfcd_unselect_all;
+  sfcd_class->select_uri = rfcd_select_uri;
+  sfcd_class->unselect_uri = rfcd_unselect_uri;
   sfcd_class->set_action = rfcd_set_action;
   sfcd_class->get_action = rfcd_get_action;
   sfcd_class->set_local_only = rfcd_set_local_only;

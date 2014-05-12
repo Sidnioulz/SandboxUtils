@@ -791,6 +791,162 @@ sfcd_get_extra_widget (SandboxFileChooserDialog *self,
 }
 
 /**
+ * sfcd_select_filename:
+ * @dialog: a #SandboxFileChooserDialog
+ * @filename: (type filename): the filename to select
+ * @error: a placeholder for a #GError
+ * 
+ * Selects a filename. If the file name isn't in the current
+ * folder of @dialog, then the current folder of @dialog will
+ * be changed to the folder containing @filename.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_select_filename() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * See also: sfcd_set_filename()
+ *
+ * Since: 0.6
+ **/
+void
+sfcd_select_filename (SandboxFileChooserDialog  *self,
+                      const gchar               *filename,
+                      GError                   **error)
+{
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
+
+  SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->select_filename (self, filename, error);
+}
+
+/**
+ * sfcd_unselect_filename:
+ * @dialog: a #SandboxFileChooserDialog
+ * @filename: (type filename): the filename to unselect
+ * @error: a placeholder for a #GError
+ * 
+ * Unselects a currently selected filename. If the filename
+ * is not in the current directory, does not exist, or
+ * is otherwise not currently selected, does nothing.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_unselect_filename() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Since: 0.6
+ **/
+void
+sfcd_unselect_filename (SandboxFileChooserDialog  *self,
+                        const gchar               *filename,
+                        GError                   **error)
+{
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
+
+  SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->unselect_filename (self, filename, error);
+}
+
+/**
+ * sfcd_select_all:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Selects all the files in the current folder of a dialog.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_select_all() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Since: 0.6
+ **/
+void
+sfcd_select_all (SandboxFileChooserDialog  *self,
+                 GError                   **error)
+{
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
+
+  SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->select_all (self, error);
+}
+
+/**
+ * sfcd_unselect_all:
+ * @dialog: a #SandboxFileChooserDialog
+ * @error: a placeholder for a #GError
+ * 
+ * Unselects all the files in the current folder of a dialog.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_unselect_all() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Since: 0.6
+ **/
+void
+sfcd_unselect_all (SandboxFileChooserDialog  *self,
+                   GError                   **error)
+{
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
+
+  SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->unselect_all (self, error);
+}
+
+/**
+ * sfcd_select_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @uri: the URI to select
+ * @error: a placeholder for a #GError
+ * 
+ * Selects the file to by @uri. If the URI doesn't refer to a
+ * file in the current folder of @dialog, then the current folder of
+ * @dialog will be changed to the folder containing @filename.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_select_uri() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Since: 0.6
+ **/
+void
+sfcd_select_uri (SandboxFileChooserDialog  *self,
+                 const gchar               *uri,
+                 GError                   **error)
+{
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
+
+  SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->select_uri (self, uri, error);
+}
+
+/**
+ * sfcd_unselect_uri:
+ * @dialog: a #SandboxFileChooserDialog
+ * @uri: the URI to unselect
+ * @error: a placeholder for a #GError
+ * 
+ * Unselects the file referred to by @uri. If the file
+ * is not in the current directory, does not exist, or
+ * is otherwise not currently selected, does nothing.
+ *
+ * This method belongs to the %SFCD_CONFIGURATION state. It is equivalent to
+ * gtk_file_chooser_unselect_uri() in the GTK+ API. Do remember to check if
+ * @error is set after running this method. If set, the return value is
+ * undefined.
+ *
+ * Since: 0.6
+ **/
+void
+sfcd_unselect_uri (SandboxFileChooserDialog  *self,
+                   const gchar               *uri,
+                   GError                   **error)
+{
+  g_return_if_fail (_sfcd_entry_sanity_check (self, error));
+
+  SANDBOX_FILE_CHOOSER_DIALOG_GET_CLASS (self)->unselect_uri (self, uri, error);
+}
+
+/**
  * sfcd_set_action:
  * @dialog: a #SandboxFileChooserDialog
  * @action: the #GtkFileChooserAction that the dialog is performing
