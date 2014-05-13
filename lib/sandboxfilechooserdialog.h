@@ -41,7 +41,6 @@ G_BEGIN_DECLS
  *  or queried.
  * @SFCD_DATA_RETRIEVAL: Indicates the dialog successfully ran and the selection
  *  of the user can now be retrieved.
- * @SFCD_LAST_STATE: Should never occur. Equivalent to %SFCD_WRONG_STATE.
  *
  * Describes the current state of a #SandboxFileChooserDialog.
  */
@@ -50,15 +49,10 @@ typedef enum {
   SFCD_CONFIGURATION   = 1,
   SFCD_RUNNING         = 2,
   SFCD_DATA_RETRIEVAL  = 3,
+  /*< private >*/
   SFCD_LAST_STATE      = 4,
 } SfcdState;
 
-/**
- * SfcdStatePrintable:
- * An array of string descriptions for the states of a #SandboxFileChooserDialog.
- * You can index this array with an instance of #SfcdState to obtain a printable
- * description of this instance.
- */
 static const
 gchar *SfcdStatePrintable[5] = {"Wrong State (an error occurred)",
                                 "Configuration",
@@ -404,7 +398,7 @@ sfcd_get_current_folder_uri (SandboxFileChooserDialog   *dialog,
 
 
 
-/**
+/*
  * Proposed API changes
  * _____________________________________________________________________________
  * API CHANGE: Select at least X items

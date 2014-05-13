@@ -25,7 +25,8 @@
  * @Title: SandboxFileChooserDialog
  * @Short_description: A dialog for choosing files meant to be manipulated over
  * IPC by a sandboxed application
- * @See_also: #GAppInfo
+ * @stability: Unstable
+ * @include: sandboxutils.h
  *
  * #SandboxFileChooserDialog is an API for a file chooser dialog, based on the
  * #GtkFileChooserDialog class and #GtkFileChooser interface. This dialog can be
@@ -82,7 +83,7 @@
  * you will be granted write access to the current name of the dialog upon 
  * retrieving it (see sfcd_get_current_name ()).
  *
- * As of 0.4, it has not yet been decided whether your application will receive
+ * As of now, it has not yet been decided whether your application will receive
  * file paths or file descriptors or both in the %SFCD_DATA_RETRIEVAL state.
  *
  * Since: 0.3
@@ -102,7 +103,8 @@
 G_DEFINE_TYPE (SandboxFileChooserDialog, sfcd, G_TYPE_OBJECT)
 
 /**
- * SfcdAcceptLabels:
+ * SandboxFileChooserDialog:SfcdAcceptLabels:
+ *
  * An array of button labels that are considered to correspond to an action
  * indicating user acceptance. If you attempt to add a button to a
  * #SandboxFileChooserDialog with a response id among %GTK_RESPONSE_ACCEPT, 
@@ -110,6 +112,10 @@ G_DEFINE_TYPE (SandboxFileChooserDialog, sfcd, G_TYPE_OBJECT)
  * not contained in %SfcdAcceptLabels, it will be rejected and will not appear.
  * This is to prevent malicious applications from tricking a user into accepting
  * a file selection when they cancel an undesired dialog.
+ *
+ * See also: sfcd_is_accept_label()
+ *
+ * Since: 0.4
  */
 const gchar *SfcdAcceptLabels[] =
 {
@@ -159,9 +165,65 @@ const gchar *SfcdAcceptLabels[] =
  * @label: a prospective #SandboxFileChooserDialog button label
  * 
  * Verifies whether a button label would be valid for use in a button with a
- * response id suggesting user acceptance of a file selection. This function
+ * response id suggesting the user accepts a file being selected. This function
  * automatically removes underscores from labels before performing a comparison
  * so you don't need to do it yourself.
+ *
+ * The %SfcdAcceptLabels array defines labels that are considered acceptable.
+ * indicating user acceptance. If you attempt to add a button to a
+ * #SandboxFileChooserDialog with a response id among %GTK_RESPONSE_ACCEPT, 
+ * %GTK_RESPONSE_OK, %GTK_RESPONSE_YES or %GTK_RESPONSE_APPLY and with a button
+ * not contained in %SfcdAcceptLabels, it will be rejected and will not appear.
+ * This is to prevent malicious applications from tricking a user into accepting
+ * a file selection when they cancel an undesired dialog.
+ *
+ * The current list of %SfcdAcceptLabels goes as follows:
+ * <informalexample><programlisting>
+ * const gchar *SfcdAcceptLabels[] =
+ * {
+ *   "Accept",
+ *   "Next",
+ *   "Ok",
+ *   "Choose",
+ *   "Confirm",
+ *   "Pick",
+ *   "Yes",
+ *   "Apply",
+ *   "Select",
+ *   "Add",
+ *   "Append",
+ *   "Save",
+ *   "Save as...",
+ *   "Save Copy",
+ *   "Export",
+ *   "Create",
+ *   "Send",
+ *   "Upload",
+ *   "Rename",
+ *   "Write",
+ *   "Merge",
+ *   "Extract",
+ *   "Open",
+ *   "Open as...",
+ *   "Open Copy",
+ *   "Open Read-Only",
+ *   "Import",
+ *   "Print",
+ *   "Read",
+ *   "View",
+ *   "Preview",
+ *   "Load",
+ *   "Download",
+ *   "Play",
+ *   "Enqueue",
+ *   "Attach",
+ *   "Extract",
+ *   "Compare",
+ *   NULL
+ * };
+ * </programlisting></informalexample>
+ *
+ * #SfcdAcceptLabels
  *
  * Returns: True if the sanity check succeeds, False if the @dialog or @error
  * were not as expected
@@ -254,13 +316,13 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
    *
    * Emitted when an action widget is clicked, the dialog receives a
    * delete event, or the application programmer calls gtk_dialog_response().
-   * On a delete event, the response ID is #GTK_RESPONSE_DELETE_EVENT.
+   * On a delete event, the response ID is %GTK_RESPONSE_DELETE_EVENT.
    * Otherwise, it depends on which action widget was clicked.
    *
    * Note that the state of the @dialog will depend on whether the response id
    * translates as the user accepting an operation to take place or not. The
    * GTK+ API defines %GTK_RESPONSE_ACCEPT, %GTK_RESPONSE_OK, %GTK_RESPONSE_YES
-   * and %GTK_RESPONSE_ACCEPT as meaning user acceptance. In SandboxUtils, these
+   * and %GTK_RESPONSE_ACCEPT as meaning user acceptance. In Sandbox Utils, these
    * response ids can only be used for buttons whose label is included into the
    * acceptance-meaning labels.
    */
@@ -310,7 +372,7 @@ sfcd_class_init (SandboxFileChooserDialogClass *klass)
  * 
  * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
  *
- * Return value: a new #SansboxFileChooserDialog
+ * Return value: a new #SandboxFileChooserDialog
  *
  * Since: 0.5
  **/
@@ -421,7 +483,7 @@ sfcd_get_dialog_title (SandboxFileChooserDialog *self)
 }
 
 /**
- * sfcd_get_state:
+ * sfcd_is_running:
  * @dialog: a #SandboxFileChooserDialog
  * 
  * Returns whether an instance of #SandboxFileChooserDialog is currently running,
@@ -524,7 +586,7 @@ _sfcd_entry_sanity_check (SandboxFileChooserDialog *self,
  * associated with, for example.
  *
  * This method can be called from any #SfcdState. It is equivalent to
- * gtk_file_chooser_set_destroy_with_parent() in the GTK+ API.
+ * gtk_window_set_destroy_with_parent() in the GTK+ API.
  *
  * Since: 0.5
  **/
@@ -540,13 +602,12 @@ sfcd_set_destroy_with_parent (SandboxFileChooserDialog  *self,
 /**
  * sfcd_get_destroy_with_parent:
  * @dialog: a #SandboxFileChooserDialog
- * @error: a placeholder for a #GError
  *
  * Returns whether the window will be destroyed with its transient parent; See
  * sfcd_set_destroy_with_parent() for more information.
  *
  * This method can be called from any #SfcdState. It is equivalent to
- * gtk_file_chooser_get_destroy_with_parent() in the GTK+ API.
+ * gtk_window_get_destroy_with_parent() in the GTK+ API.
  *
  * Return value: %TRUE if the window will be destroyed with its transient parent.
  *
@@ -597,7 +658,7 @@ sfcd_get_destroy_with_parent (SandboxFileChooserDialog *self)
  * gtk_widget_destroy (dialog);
  * </programlisting></informalexample>
  * </para>
- * With #SandboxUtils, you would instead do the following:
+ * With Sandbox Utils, you would instead do the following:
  * <para>
  * <informalexample><programlisting>
  * static void
@@ -714,7 +775,7 @@ sfcd_present (SandboxFileChooserDialog  *self,
  * method fails if the @dialog is not running. Internally, it hides the dialog's
  * window which causes it to unmap, and the running loop will catch the unmap
  * signal and emit a #SandboxFileChooserDialog::response signal. The
- * @response_id will be set to GTK_RESPONSE_NONE, which you should ignore in
+ * @response_id will be set to %GTK_RESPONSE_NONE, which you should ignore in
  * the callbacks you connected to this signal. the @dialog will be back into a
  * %SFCD_CONFIGURATION #SfcdState.
  *
@@ -723,7 +784,7 @@ sfcd_present (SandboxFileChooserDialog  *self,
  * dialog while running.
  *
  * This method belongs to the %SFCD_RUNNING state. It is equivalent to
- * gtk_window_hide() in the GTK+ API. Do remember to check if @error is set 
+ * gtk_widget_hide() in the GTK+ API. Do remember to check if @error is set 
  * after running this method.
  *
  * Since: 0.3
@@ -1661,14 +1722,15 @@ sfcd_list_shortcut_folder_uris (SandboxFileChooserDialog   *self,
  * change the extension of the typed filename based on the chosen format, say,
  * from ".jpg" to ".png".
  *
- * FIXME: this cannot be provided and advertised in the same way in SandboxUtils.
- * An API will be provided to complete/modify filenames for file extension to 
- * format matching, but apps can no longer choose arbitrary names.
- *
  * This method belongs to the %SFCD_DATA_RETRIEVAL state. It is equivalent to
  * gtk_file_chooser_get_current_name() in the GTK+ API. Do remember to check if
  * @error is set after running this method. If set, the return value is
  * undefined.
+ *
+ * <note><para>This method should not be used as it was in GTK+ to pick the typed name
+ * and complete or modify their extension. App can no longer choose arbitrary
+ * names in the context of sandboxing. A specific API for automatic filename
+ * completion will be provided in the future</para></note>
  *
  * Returns: The raw text from the dialog's "Name" entry. Free this with
  * g_free(). Note that this string is not a full pathname or URI; it is
@@ -1720,7 +1782,7 @@ sfcd_get_filename (SandboxFileChooserDialog   *self,
 }
 
 /**
- * sfcd_get_filenames:
+ * sfcd_get_uris:
  * @dialog: a #SandboxFileChooserDialog
  * @error: a placeholder for a #GError
  * 

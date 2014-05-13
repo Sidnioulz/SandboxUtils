@@ -23,9 +23,12 @@
 /**
  * SECTION:remotefilechooserdialog
  * @Title: RemoteFileChooserDialog
- * @Short_description: A remote implementation of #SandboxFileChooserDialog, this
- * is used to implement #SandboxFileChooserDialog for client applications.
- * @See_also: #SandboxFileChooserDialog
+ * @Short_description: A SandboxFileChooserDialog for
+ * client applications to access a remote privileged server
+ * @stability: Unstable
+ * @include: sandboxutils.h
+ *
+ * @See also: #SandboxFileChooserDialog
  *
  * #RemoteFileChooserDialog is a private class, that implements the
  * #SandboxFileChooserDialog API. This class redirects all of its methods over
@@ -202,7 +205,7 @@ _rfcd_class_proxy_init (RemoteFileChooserDialogClass *klass)
     klass->proxy = NULL;
 
     syslog (LOG_ALERT, "SandboxFileChooserDialog._ClassProxyInit: could not create proxy (%s).",
-            sandboxutils_error_get_message (error));
+            _sandboxutils_error_get_message (error));
     g_error_free (error);
 
     return FALSE;
@@ -333,7 +336,7 @@ rfcd_finalize (GObject* object)
  *
  * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
  *
- * Return value: a new #SansboxFileChooserDialog
+ * Return value: a new #SandboxFileChooserDialog
  *
  * See also: rfcd_new() to create a #RemoteFileChooserDialog, and sfcd_new() to
  * create a #SandboxFileChooserDialog regardless of whether local or remote.
@@ -392,7 +395,7 @@ rfcd_new_valist (const gchar          *title,
     g_object_unref (rfcd);
     rfcd = NULL;
     syslog (LOG_ALERT, "SandboxFileChooserDialog.New: error when creating dialog -- %s",
-            sandboxutils_error_get_message (error));
+            _sandboxutils_error_get_message (error));
     g_error_free (error);
 
     return NULL;
@@ -430,7 +433,7 @@ rfcd_new_valist (const gchar          *title,
  *
  * This is equivalent to gtk_file_chooser_dialog_new() in the GTK+ API.
  *
- * Return value: a new #SansboxFileChooserDialog
+ * Return value: a new #SandboxFileChooserDialog
  *
  * See also: rfcd_new() to create a #RemoteFileChooserDialog, and sfcd_new() to
  * create a #SandboxFileChooserDialog regardless of whether local or remote.
@@ -469,7 +472,7 @@ rfcd_destroy (SandboxFileChooserDialog *sfcd)
                                              &error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Destroy: error when destroying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (error));
+            self->priv->remote_id, _sandboxutils_error_get_message (error));
     g_error_free (error);
   }
   else
@@ -494,13 +497,13 @@ rfcd_get_state (SandboxFileChooserDialog *sfcd)
                                              &error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetState: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (error));
+            self->priv->remote_id, _sandboxutils_error_get_message (error));
     g_error_free (error);
 
   }
 
   // In lack of a better option...
-  return sandboxutils_max (SFCD_WRONG_STATE, sandboxutils_min (SFCD_LAST_STATE, stateHolder));
+  return _sandboxutils_max (SFCD_WRONG_STATE, _sandboxutils_min (SFCD_LAST_STATE, stateHolder));
 }
 
 const gchar *
@@ -609,7 +612,7 @@ rfcd_set_extra_widget (SandboxFileChooserDialog *sfcd,
                                                       error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetExtraWidget: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
 
     gtk_widget_destroy (plug);
   }
@@ -653,7 +656,7 @@ rfcd_run (SandboxFileChooserDialog *sfcd,
                                          error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Run: error when running dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -670,7 +673,7 @@ rfcd_present (SandboxFileChooserDialog  *sfcd,
                                              error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.Present: error when presenting dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -687,7 +690,7 @@ rfcd_cancel_run (SandboxFileChooserDialog  *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.CancelRun: error when cancelling the run of dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -706,7 +709,7 @@ rfcd_select_filename (SandboxFileChooserDialog  *sfcd,
                                                      error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SelectFilename: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -725,7 +728,7 @@ rfcd_unselect_filename (SandboxFileChooserDialog  *sfcd,
                                                        error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.UnselectFilename: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -742,7 +745,7 @@ rfcd_select_all (SandboxFileChooserDialog  *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SelectAll: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -759,7 +762,7 @@ rfcd_unselect_all (SandboxFileChooserDialog  *sfcd,
                                                   error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.UnselectAll: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -778,7 +781,7 @@ rfcd_select_uri (SandboxFileChooserDialog  *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SelectUri: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -797,7 +800,7 @@ rfcd_unselect_uri (SandboxFileChooserDialog  *sfcd,
                                                   error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.UnselectUri: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -816,7 +819,7 @@ rfcd_set_action (SandboxFileChooserDialog  *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetAction: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -835,7 +838,7 @@ rfcd_get_action (SandboxFileChooserDialog *sfcd,
                                                 error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetAction: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return result;
@@ -856,7 +859,7 @@ rfcd_set_local_only (SandboxFileChooserDialog  *sfcd,
                                                     error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetLocalOnly: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -875,7 +878,7 @@ rfcd_get_local_only (SandboxFileChooserDialog  *sfcd,
                                                     error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetLocalOnly: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return result;
@@ -896,7 +899,7 @@ rfcd_set_select_multiple (SandboxFileChooserDialog *sfcd,
                                                          error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetSelectMultiple: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -915,7 +918,7 @@ rfcd_get_select_multiple (SandboxFileChooserDialog  *sfcd,
                                                          error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetSelectMultiple: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return result;
@@ -936,7 +939,7 @@ rfcd_set_show_hidden (SandboxFileChooserDialog  *sfcd,
                                                      error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetShowHidden: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -955,7 +958,7 @@ rfcd_get_show_hidden (SandboxFileChooserDialog *sfcd,
                                                      error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetShowHidden: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return result;
@@ -976,7 +979,7 @@ rfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *sfcd,
                                                                    error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetDoOverwriteConfirmation: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
 }
@@ -996,7 +999,7 @@ rfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *sfcd,
                                                                    error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetDoOverwriteConfirmation: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return result;
@@ -1017,7 +1020,7 @@ rfcd_set_create_folders (SandboxFileChooserDialog  *sfcd,
                                                         error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetCreateFolders: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -1036,7 +1039,7 @@ rfcd_get_create_folders (SandboxFileChooserDialog  *sfcd,
                                                     error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetCreateFolders: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return result;
@@ -1057,7 +1060,7 @@ rfcd_set_current_name (SandboxFileChooserDialog  *sfcd,
                                                       error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetCurrentName: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -1076,7 +1079,7 @@ rfcd_set_filename (SandboxFileChooserDialog  *sfcd,
                                                   error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetFilename: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -1095,7 +1098,7 @@ rfcd_set_current_folder (SandboxFileChooserDialog  *sfcd,
                                                         error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetCurrentFolder: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -1114,7 +1117,7 @@ rfcd_set_uri (SandboxFileChooserDialog  *sfcd,
                                              error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetUri: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -1133,7 +1136,7 @@ rfcd_set_current_folder_uri (SandboxFileChooserDialog  *sfcd,
                                                             error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.SetCurrentFolderUri: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 }
 
@@ -1153,7 +1156,7 @@ rfcd_add_shortcut_folder (SandboxFileChooserDialog  *sfcd,
                                                                       error)))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.AddShortcutFolder: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return succeeded;
@@ -1175,7 +1178,7 @@ rfcd_remove_shortcut_folder (SandboxFileChooserDialog  *sfcd,
                                                                          error)))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.RemoveShortcutFolder: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return succeeded;
@@ -1197,7 +1200,7 @@ rfcd_list_shortcut_folders (SandboxFileChooserDialog *sfcd,
                                                            error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.ListShortcutFolders: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1226,7 +1229,7 @@ rfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *sfcd,
                                                                           error)))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.AddShortcutFolderUri: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return succeeded;
@@ -1248,7 +1251,7 @@ rfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog *sfcd,
                                                                              error)))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.RemoveShortcutFolderUri: error when modifying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return succeeded;
@@ -1270,7 +1273,7 @@ rfcd_list_shortcut_folder_uris (SandboxFileChooserDialog *sfcd,
                                                                error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.ListShortcutFolderUris: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1298,7 +1301,7 @@ rfcd_get_current_name (SandboxFileChooserDialog *sfcd,
                                                       error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetCurrentName: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return name;
@@ -1319,7 +1322,7 @@ rfcd_get_filename (SandboxFileChooserDialog *sfcd,
                                                   error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetFilename: error when running dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return filename;
@@ -1341,7 +1344,7 @@ rfcd_get_filenames (SandboxFileChooserDialog *sfcd,
                                                    error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetFilenames: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1369,7 +1372,7 @@ rfcd_get_current_folder (SandboxFileChooserDialog *sfcd,
                                                         error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetCurrentFolder: error when running dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return filename;
@@ -1390,7 +1393,7 @@ rfcd_get_uri (SandboxFileChooserDialog *sfcd,
                                              error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetUri: error when running dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return uri;
@@ -1412,7 +1415,7 @@ rfcd_get_uris (SandboxFileChooserDialog *sfcd,
                                               error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetUris: error when querying dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1440,7 +1443,7 @@ rfcd_get_current_folder_uri (SandboxFileChooserDialog *sfcd,
                                                             error))
   {
     syslog (LOG_ALERT, "SandboxFileChooserDialog.GetCurrentFolderUri: error when running dialog %s -- %s",
-            self->priv->remote_id, sandboxutils_error_get_message (*error));
+            self->priv->remote_id, _sandboxutils_error_get_message (*error));
   }
 
   return uri;

@@ -20,10 +20,12 @@
  */
 
 /**
- * SECTION:sandboxfilecommon
+ * SECTION:sandboxutilscommon
  * @Title: SandboxUtilsCommon
  * @Short_description: Libwise constants and initialisation functions for client
  * apps
+ * @stability: Unstable
+ * @include: sandboxutils.h
  *
  * This file contains constants such as the name of the library and its version,
  * the D-Bus interface name and path used by Sandbox Utils and a couple of

@@ -22,6 +22,7 @@
 #define __SANDBOX_UTILS_COMMON_H__
 
 #define SANDBOXUTILS_NAME "Sandbox Utils"
+
 #define SANDBOXUTILS_VERSION "@VERSION@"
 
 #define SANDBOXUTILS_IFACE "org.mupuf.SandboxUtils"
