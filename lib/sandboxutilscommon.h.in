@@ -1,17 +1,28 @@
-/* SandboxUtils -- Sandbox Utils common variables
- * Copyright (c) Steve Dodier-Lazaro <sidnioulz@gmail.com>, 2014
- * 
- * Under GPLv3
- * 
- *** 
- * 
- * TODO
+/*
+ * sandboxutilscommon.h: Sandbox Utils common functions
+ *
+ * Copyright (C) 2014 Steve Dodier-Lazaro <sidnioulz@gmail.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Authors: Steve Dodier-Lazaro <sidnioulz@gmail.com>
  */
 #ifndef __SANDBOX_UTILS_COMMON_H__
 #define __SANDBOX_UTILS_COMMON_H__
 
-#define NAME "Sandbox Utils"
-#define VERSION "@VERSION@"
+#define SANDBOXUTILS_NAME "Sandbox Utils"
+#define SANDBOXUTILS_VERSION "@VERSION@"
 
 #define SANDBOXUTILS_IFACE "org.mupuf.SandboxUtils"
 #define SANDBOXUTILS_PATH "/org/mupuf/SandboxUtils"
@@ -20,13 +31,13 @@
 
 #include <glib.h>
 const gchar *
-g_error_get_message (GError *err);
+_sandboxutils_error_get_message (GError *err);
 
 const int
-min (int a, int b);
+_sandboxutils_min (int a, int b);
 
 const int
-max (int a, int b);
+_sandboxutils_max (int a, int b);
 
 GOptionGroup *
 sandboxutils_get_option_group ();

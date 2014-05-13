@@ -12,8 +12,21 @@
 
 #include "sandboxutilscommon.h"
 
+/**
+ * sandboxutils_error_get_message:
+ * @err: a GError or %NULL
+ *
+ * Retrieves the message inside a GError in a safe way, testing for
+ * %NULL-pointers beforehand. This function will always return a string, so you
+ * can use it for logging error messages.
+ *
+ * Returns: the message of a GError if it is not %NULL, or returns "(no error)"
+ * otherwise.
+ *
+ * Since: 0.3
+ */
 const gchar *
-g_error_get_message (GError *err)
+sandboxutils_error_get_message (GError *err)
 {
   if (err)
     return err->message;
@@ -21,14 +34,36 @@ g_error_get_message (GError *err)
     return "(no error)";
 }
 
+/**
+ * sandboxutils_min:
+ * @a: an integer
+ * @b: another integer
+ *
+ * Returns the smallest of two signed integers.
+ *
+ * Returns: the smallest integer between a and b.
+ *
+ * Since: 0.3
+ */
 const int
-min (int a, int b)
+sandboxutils_min (int a, int b)
 {
   return a<b? a:b;
 }
 
+/**
+ * sandboxutils_max:
+ * @a: an integer
+ * @b: another integer
+ *
+ * Returns the largest of two signed integers.
+ *
+ * Returns: the largest integer between a and b.
+ *
+ * Since: 0.3
+ */
 const int
-max (int a, int b)
+sandboxutils_max (int a, int b)
 {
   return a>b? a:b;
 }

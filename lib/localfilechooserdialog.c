@@ -781,7 +781,7 @@ lfcd_run (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-    syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+    syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -859,7 +859,7 @@ lfcd_present (SandboxFileChooserDialog  *sfcd,
                 sfcd_get_id (sfcd),
                 sfcd_get_dialog_title (sfcd));
 
-    syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+    syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -892,7 +892,7 @@ lfcd_cancel_run (SandboxFileChooserDialog  *sfcd,
                 sfcd_get_id (sfcd),
                 sfcd_get_dialog_title (sfcd));
 
-    syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+    syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -965,7 +965,7 @@ lfcd_select_filename (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  filename);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1010,7 +1010,7 @@ lfcd_unselect_filename (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  filename);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1052,7 +1052,7 @@ lfcd_select_all (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1094,7 +1094,7 @@ lfcd_unselect_all (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1137,7 +1137,7 @@ lfcd_select_uri (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  uri);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1182,7 +1182,7 @@ lfcd_unselect_uri (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  uri);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1227,7 +1227,7 @@ lfcd_set_action (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  action);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1272,7 +1272,7 @@ lfcd_get_action (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1310,7 +1310,7 @@ lfcd_set_local_only (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  _B (local_only));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1355,7 +1355,7 @@ lfcd_get_local_only (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1393,7 +1393,7 @@ lfcd_set_select_multiple (SandboxFileChooserDialog *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  _B (select_multiple));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1438,7 +1438,7 @@ lfcd_get_select_multiple (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1476,7 +1476,7 @@ lfcd_set_show_hidden (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  _B (show_hidden));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1521,7 +1521,7 @@ lfcd_get_show_hidden (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1559,7 +1559,7 @@ lfcd_set_do_overwrite_confirmation (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  _B (do_overwrite_confirmation));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1604,7 +1604,7 @@ lfcd_get_do_overwrite_confirmation (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1642,7 +1642,7 @@ lfcd_set_create_folders (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  _B (create_folders));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1687,7 +1687,7 @@ lfcd_get_create_folders (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1725,7 +1725,7 @@ lfcd_set_current_name (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  name);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1770,7 +1770,7 @@ lfcd_set_filename (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  filename);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1815,7 +1815,7 @@ lfcd_set_current_folder (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  filename);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1860,7 +1860,7 @@ lfcd_set_uri (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  uri);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1905,7 +1905,7 @@ lfcd_set_current_folder_uri (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  uri);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1952,7 +1952,7 @@ lfcd_add_shortcut_folder (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  folder);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -1981,7 +1981,7 @@ lfcd_add_shortcut_folder (SandboxFileChooserDialog  *sfcd,
                       sfcd_get_dialog_title (sfcd),
                       folder);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
     }
   }
 
@@ -2012,7 +2012,7 @@ lfcd_remove_shortcut_folder (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  folder);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2041,7 +2041,7 @@ lfcd_remove_shortcut_folder (SandboxFileChooserDialog  *sfcd,
                       sfcd_get_dialog_title (sfcd),
                       folder);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
     }
   }
 
@@ -2069,7 +2069,7 @@ lfcd_list_shortcut_folders (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2109,7 +2109,7 @@ lfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  uri);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2138,7 +2138,7 @@ lfcd_add_shortcut_folder_uri (SandboxFileChooserDialog  *sfcd,
                       sfcd_get_dialog_title (sfcd),
                       uri);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
     }
   }
 
@@ -2169,7 +2169,7 @@ lfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog *sfcd,
                  sfcd_get_dialog_title (sfcd),
                  uri);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2198,7 +2198,7 @@ lfcd_remove_shortcut_folder_uri (SandboxFileChooserDialog *sfcd,
                       sfcd_get_dialog_title (sfcd),
                       uri);
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
     }
   }
 
@@ -2226,7 +2226,7 @@ lfcd_list_shortcut_folder_uris (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2264,7 +2264,7 @@ lfcd_get_current_name (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2302,7 +2302,7 @@ lfcd_get_filename (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2340,7 +2340,7 @@ lfcd_get_filenames (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2378,7 +2378,7 @@ lfcd_get_current_folder (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2415,7 +2415,7 @@ lfcd_get_uri (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2453,7 +2453,7 @@ lfcd_get_uris (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  sfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   else
   {
@@ -2491,7 +2491,7 @@ lfcd_get_current_folder_uri (SandboxFileChooserDialog *sfcd,
                  sfcd_get_id (sfcd),
                  lfcd_get_dialog_title (sfcd));
 
-      syslog (LOG_WARNING, "%s", g_error_get_message (*error));
+      syslog (LOG_WARNING, "%s", sandboxutils_error_get_message (*error));
   }
   
   else

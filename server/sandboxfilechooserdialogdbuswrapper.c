@@ -124,13 +124,13 @@ static void
 _sfcd_dbus_wrapper_return_error (GDBusMethodInvocation    *invocation,
                                  GError                   *error)
 {
-  syslog (LOG_CRIT, "SfcdDbusWrapper.Dbus._Handler: %s", g_error_get_message (error));
+  syslog (LOG_CRIT, "SfcdDbusWrapper.Dbus._Handler: %s", _sandboxutils_error_get_message (error));
 
   g_dbus_method_invocation_return_error (invocation,
                                          G_DBUS_ERROR,
                                          G_DBUS_ERROR_FAILED,
                                          "SfcdDbusWrapper.Dbus._Handler: %s",
-                                         g_error_get_message (error));
+                                         _sandboxutils_error_get_message (error));
   g_error_free (error);
 }
 
@@ -1497,7 +1497,7 @@ sfcd_dbus_on_bus_acquired (GDBusConnection *connection,
                                          SANDBOXUTILS_PATH,
                                          &error))
   {
-    syslog (LOG_CRIT, "SfcdDbusWrapper.Dbus.OnBusAcquired: %s\n", g_error_get_message (error));
+    syslog (LOG_CRIT, "SfcdDbusWrapper.Dbus.OnBusAcquired: %s\n", _sandboxutils_error_get_message (error));
     g_error_free (error);
   }
 }

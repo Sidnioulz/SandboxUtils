@@ -41,7 +41,7 @@ watchdog_func (gpointer data)
 static void
 signal_manager (int signal)
 {
-  syslog (LOG_DEBUG, NAME" received SIGINT, now shutting down...\n");
+  syslog (LOG_DEBUG, SANDBOXUTILS_NAME" received SIGINT, now shutting down...\n");
 
   //TODO clean up memory, etc
 
@@ -73,8 +73,8 @@ main (int argc, char *argv[])
   sigaction (SIGINT, &action, NULL);
 
   // Open log
-  openlog (NAME, LOG_PID | LOG_CONS | LOG_PERROR, LOG_USER);
-  syslog (LOG_INFO, "Starting "NAME" version "VERSION"\n");
+  openlog (SANDBOXUTILS_NAME, LOG_PID | LOG_CONS | LOG_PERROR, LOG_USER);
+  syslog (LOG_INFO, "Starting "SANDBOXUTILS_NAME" version "SANDBOXUTILS_VERSION"\n");
 
   // Initialise the interface providing SandboxFileChooserDialog
   sfcd_wrapper = sfcd_dbus_wrapper_dbus_init ();
