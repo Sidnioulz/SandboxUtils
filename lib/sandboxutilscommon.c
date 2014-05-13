@@ -1,19 +1,47 @@
-/* SandboxUtils -- Sandbox Utils common functions
- * Copyright (c) Steve Dodier-Lazaro <sidnioulz@gmail.com>, 2014
- * 
- * Under GPLv3
- * 
- *** 
- * 
- * TODO
+/*
+ * sandboxutilscommon.c: Sandbox Utils common functions
+ *
+ * Copyright (C) 2014 Steve Dodier-Lazaro <sidnioulz@gmail.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Authors: Steve Dodier-Lazaro <sidnioulz@gmail.com>
  */
+
+/**
+ * SECTION:sandboxfilecommon
+ * @Title: SandboxUtilsCommon
+ * @Short_description: Libwise constants and initialisation functions for client
+ * apps
+ *
+ * This file contains constants such as the name of the library and its version,
+ * the D-Bus interface name and path used by Sandbox Utils and a couple of
+ * internal macros and functions.
+ *
+ * It also hosts the sandboxutils_init() function and other functions exposing
+ * the #GOptionGroup used by Sandbox Utils. Clients can use these functions to
+ * enable or disable D-Bus based remote widgets.
+ *
+ * Since: 0.3
+ **/
 
 #include <syslog.h>
 
 #include "sandboxutilscommon.h"
 
 /**
- * sandboxutils_error_get_message:
+ * _sandboxutils_error_get_message:
  * @err: a GError or %NULL
  *
  * Retrieves the message inside a GError in a safe way, testing for
@@ -26,7 +54,7 @@
  * Since: 0.3
  */
 const gchar *
-sandboxutils_error_get_message (GError *err)
+_sandboxutils_error_get_message (GError *err)
 {
   if (err)
     return err->message;
@@ -35,7 +63,7 @@ sandboxutils_error_get_message (GError *err)
 }
 
 /**
- * sandboxutils_min:
+ * _sandboxutils_min:
  * @a: an integer
  * @b: another integer
  *
@@ -46,13 +74,13 @@ sandboxutils_error_get_message (GError *err)
  * Since: 0.3
  */
 const int
-sandboxutils_min (int a, int b)
+_sandboxutils_min (int a, int b)
 {
   return a<b? a:b;
 }
 
 /**
- * sandboxutils_max:
+ * _sandboxutils_max:
  * @a: an integer
  * @b: another integer
  *
@@ -63,7 +91,7 @@ sandboxutils_min (int a, int b)
  * Since: 0.3
  */
 const int
-sandboxutils_max (int a, int b)
+_sandboxutils_max (int a, int b)
 {
   return a>b? a:b;
 }
