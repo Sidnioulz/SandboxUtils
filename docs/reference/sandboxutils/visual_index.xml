@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE para PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+               "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+<para>
+<section id="visual-file-chooser-dialog">
+  <title>File Chooser Dialog</title>
+  <para role="gallery">
+    <link linkend="SandboxFileChooserDialog#Original">
+      <inlinegraphic fileref="sfcd-original.png" format="PNG"></inlinegraphic>
+    </link>
+    <link linkend="SandboxFileChooserDialog#Autocompletion">
+      <inlinegraphic fileref="mockup-extraline-xml.png" format="PNG"></inlinegraphic>
+    </link>
+  </para>
+</section>
+
+</para>

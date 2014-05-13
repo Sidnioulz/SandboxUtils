@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+               "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+<refentry id="sandboxutils-contribute">
+<refmeta>
+<refentrytitle>How to Contribute</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>How to Contribute</refname>
+<refpurpose>
+Getting in touch and writing code
+</refpurpose>
+</refnamediv>
+
+<refsect1>
+
+<refsect2>
+<title>Contacting the Developer</title>
+      <para>
+      I (Steve) can be found most of the times on the Freenode IRC channel <literal>#wayland-security</literal>
+      or on the GIMP.net IRC channel <literal>#gnome-design</literal>, albeit not affiliated with those projects.
+      Feel free to message me in private, too. 
+      </para>
+      <para>
+      You can email me at <ulink url="mailto:s.dodier-lazaro@cs.ucl.ac.uk"><literal>s.dodier-lazaro@cs.ucl.ac.uk</literal></ulink>.
+      This is a very good way of getting in touch if you want to contribute!
+      </para>
+
+      <para>
+      I will usually post news about Sandbox Utils on the
+      <ulink role="online-location" url="https://mail.gnome.org/mailman/listinfo/desktop-devel-list">GNOME Desktop Devel</ulink>
+      mailing list, as most of the people interested in app sandboxing are
+      affiliated with GNOME. Make sure to subscribe to receive announcements or
+      join ongoing discussions.
+      </para>
+
+</refsect2>
+
+<refsect2>
+<title>Getting the code</title>
+
+<para>
+<ulink role="online-location" url="https://github.com/Sidnioulz/SandboxUtils">See
+the GitHub repository</ulink>.
+</para>
+
+</refsect2>
+
+</refsect1>
+</refentry>

@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+               "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+<refentry id="sandboxutils-howtouse">
+<refmeta>
+<refentrytitle>How to Use Sandbox Utils</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>How to Use</refname>
+<refpurpose>
+Sandbox Utils for Users and Developers
+</refpurpose>
+</refnamediv>
+
+<refsect1>
+
+<refsect2>
+<title>How to Run an App with Sandbox Utils</title>
+
+<para>
+At the current stage of development, no launcher is available to assist building
+a sandbox. Hence, Sandbox Utils can only be used for testing. Make sure to
+either manually run <literal>sandboxutilsd</literal> before running your app or
+to run your app with <option>--no-sandbox</option>.
+<note>As the server does not support multiple clients and the launcher is not yet
+implemented, you can only test one sandbox-capable app at a time.</note>
+</para>
+</refsect2>
+
+
+<refsect2>
+<title>How to Make your App Sandbox-Capable</title>
+    <partintro>
+      <para>
+        This part describes what you need to change in your app's
+        behaviour to make sure it works in a sandboxed environment.
+        It reviews what you lose automatic access to and what parts
+        of SandboxUtils provide you with the features you need. It
+        also explains which features are not available at all with
+        SandboxUtils and how to migrate these.
+      </para>
+    </partintro>
+
+<!--
+    <xi:include href="what-is-blocked.xml" />
+    <xi:include href="files-with-sandboxutils.xml" />
+    <xi:include href="userland-capabilities.xml" />
+    <xi:include href="permanently-lost-features.xml" />
+-->
+
+<para>
+Porting your app to Sandbox Utils consists of replacing GTK+ classes by their
+Sandbox Utils equivalents. Most methods are directly equivalent, however keep in
+mind that Sandbox Utils needs to work through D-Bus: some methods have become
+asynchronous (for instance, sfcd_run() no longer returns a #GtkResponseType; you
+now need to connect to the #SandboxFileChooserDialog::response signal and wait
+until the dialog has finished running).
+</para>
+<para>
+Another important consequence of running sandboxed applications is that you should
+not assume unlimited access to resources. In particular, verify that you do not
+try to directly access a file name when you haven't directly retrieved it by a
+Sandbox Utils file selector. Likewise, do not attempt to take screenshots, record
+the screen, etc. through another API as the sandbox will prevent you from doing
+so. Make sure to do error handling in your app! Your users will be more able to
+write meaningful bug reports and find workarounds if you do so.
+</para>
+<para>
+Add the following to your <filename>configure.ac</filename> file, and then add
+<literal>SANDBOXUTILS_CFLAGS</literal> and <literal>SANDBOXUTILS_LIBS</literal>
+to your <filename>Makefile.am</filename> files where appropriate:
+<programlisting>
+PKG_CHECK_MODULES(SANDBOXUTILS,
+     sandboxutils,
+     [AC_DEFINE(HAVE_SANDBOXUTILS, 1, [Define if sandboxutils is available]) have_sandboxutils=yes],
+     have_sandboxutils=no)
+AC_SUBST(SANDBOXUTILS_CFLAGS)
+AC_SUBST(SANDBOXUTILS_LIBS)
+AM_CONDITIONAL(HAVE_SANDBOXUTILS, [test "x$have_sandboxutils" = "xyes"])
+</programlisting>
+</para>
+</refsect2>
+
+</refsect1>
+</refentry>

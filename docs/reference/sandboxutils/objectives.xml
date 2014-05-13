@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+               "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+<refentry id="sandboxutils-goals">
+<refmeta>
+<refentrytitle>Scope of the Project</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Scope of the Project</refname>
+<refpurpose>
+What we aim to provide in the long term
+</refpurpose>
+</refnamediv>
+
+<refsect1>
+<para>
+Here is a non-exhaustive list of what we expect to provide to app developers:
+</para>
+
+<itemizedlist>
+<listitem><para>
+File chooser and Recent chooser APIs
+</para></listitem>
+
+<listitem><para>
+Brand new widgets for more complex types of accesses
+</para></listitem>
+
+<listitem><para>
+Userland graphic stack capabilities with Wayland
+</para></listitem>
+
+<listitem><para>
+Other funky things such as printers, sharing data with other apps, etc
+</para></listitem>
+
+<listitem><para>
+And tools to plug Sandbox Utils into a sandboxing mechanism and have your system
+use it to run apps!
+</para></listitem>
+</itemizedlist>
+
+</refsect1>
+
+</refentry>

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+               "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+<refentry id="sandboxutils-history">
+<refmeta>
+<refentrytitle>Why do we need Sandboxing?</refentrytitle>
+</refmeta>
+
+<refnamediv>
+<refname>Why do we need Sandboxing?</refname>
+<refpurpose>
+Historical reasons behind the need for a sandboxing mechanism
+</refpurpose>
+</refnamediv>
+
+<refsect1>
+
+<para>
+Historically, Linux desktops have provided virtually no security to their users. Every app you run has your user account's privileges, meaning it can read and alter every file you own, run other apps, etc. Yet, no all apps can be trusted with such privileges. Some of them may be malicious; the malware industry is very profitable and contrary to popular belief, there are malware vendors supporting Linux! In fact, even legitimate apps should not be trusted. They may access infected or malicious websites, process crafted documents that seek to exploit their bugs, accidentally delete some of your files, and so on. Hence, why would an app run with your full privileges if you can only give it access to what it really needs?
+</para>
+
+<para>
+This is precisely what sandboxing allows. Until long, sandboxing frameworks only catered for apps that wanted to diminish their privileges themselves, leaving users unprotected from potentially-malicious (or accident-prone) apps. More recently, lots of efforts have been put into developing tools that do better sandboxing. LXC and Docker probably already suit the needs of a desktop sandbox, especially if used with seccomp2. Behind the scenes, the near-completion of Linux namespaces allows very lightweight isolation, as opposed to the old approach of using virtual machines.
+</para>
+
+<para>
+Now, all of those tools require that you manually write the access control policy for each app that you run. This works very well for server applications which always need to access and serve the same data and provide a continuous service related to this data. In contrast, desktop apps provide a short-duration service on data that is selected by the user in situation. Clearly, your users do not want to setup an access control policy every time they want to access a website or edit a document! Sandbox Utils has been started to mitigate this issue, by providing APIs that can run GUI elements from outside the sandbox, and dynamically adjust the access control policy of the sandbox as the user interacts with those APIs and naturally, seamlessly express her/his needs.
+</para>
+
+</refsect1>
+
+</refentry>

@@ -18,7 +18,7 @@ m4_define(glib_configure_ac)
 
 m4_define([su_major_version], [0])
 m4_define([su_minor_version], [6])
-m4_define([su_micro_version], [0])
+m4_define([su_micro_version], [1])
 m4_define([su_interface_age], [0])
 m4_define([su_binary_age], [0])
 
@@ -214,7 +214,7 @@ dnl **************************
 # gtkdocize greps for ^GTK_DOC_CHECK and parses it, so you need to have
 # it on it's own line.
 m4_ifdef([GTK_DOC_CHECK], [
-GTK_DOC_CHECK([1.15], [--flavour no-tmpl])
+GTK_DOC_CHECK([1.18], [--flavour no-tmpl])
 ],[
 AM_CONDITIONAL([ENABLE_GTK_DOC],[false])
 ])
@@ -345,6 +345,12 @@ AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 AM_CONDITIONAL(HAVE_GLIB, [test "x$have_glib" = "xyes"])
 
+PKG_CHECK_MODULES([GLIB],
+    [GLIB-2.0],
+  [GLIB_PREFIX=`$PKG_CONFIG --variable=prefix glib-2.0`],
+  [GLIB_PREFIX=;])
+AC_SUBST(GLIB_PREFIX)
+
 # Check for GTK+ 3.10 or more
 PKG_CHECK_MODULES(GTK,
      gtk+-3.0 >= 3.10,
@@ -353,6 +359,12 @@ PKG_CHECK_MODULES(GTK,
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 AM_CONDITIONAL(HAVE_GTK, [test "x$have_gtk" = "xyes"])
+
+PKG_CHECK_MODULES([GTK],
+    [GTK+-3.0],
+  [GTK_PREFIX=`$PKG_CONFIG --variable=prefix gtk+-3.0`],
+  [GTK_PREFIX=;])
+AC_SUBST(GTK_PREFIX)
 
 AC_CHECK_PROGS([DBUS_DAEMON], [dbus-daemon])
 AM_CONDITIONAL([HAVE_DBUS_DAEMON], [test x$DBUS_DAEMON = xdbus-daemon ])
@@ -416,11 +428,14 @@ AC_CONFIG_FILES([
 sandboxutils.pc
 lib/sandboxutilscommon.h
 Makefile
+docs/Makefile
+docs/reference/Makefile
+docs/reference/sandboxutils/version.xml
+docs/reference/sandboxutils/Makefile
 lib/Makefile
 examples/Makefile
 examples/application3/Makefile
 server/Makefile
 ])
-# docs/Makefile #TODO
 
 AC_OUTPUT

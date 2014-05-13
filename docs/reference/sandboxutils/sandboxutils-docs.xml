@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+               "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % local.common.attrib "xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'">
+<!ENTITY version SYSTEM "version.xml">
+<!ENTITY pi "&#960;">
+<!ENTITY solidus "&#8260;">
+]>
+<book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
+  <bookinfo>
+    <title>Sandbox Utils Reference Manual</title>
+    <releaseinfo>
+      For Sandbox Utils &version;. The latest version of this documentation can
+      be found on-line at <ulink role="online-location" url="http://mupuf.org/project/sandboxutils/doc/stable/">http://mupuf.org/project/sandboxutils/doc/stable/</ulink>.
+      The project page for Sandbox Utils can be found at
+      <ulink role="online-location" url="http://mupuf.org/project/sandboxutils.html">mupuf.org</ulink>.
+    </releaseinfo>
+  </bookinfo>
+
+  <part id="sandboxutils-intro">
+    <title>Introducing Sandbox Utils</title>
+
+    <partintro>
+      <para>
+        It's a series of utilities designed to help a sandboxed app communicate
+        with the outside world and get access to desktop features and user
+        documents. It does not provide a sandboxing mechanism or a method to be
+        used jointly with a specific mechanism (yet).
+      </para>
+      <para>
+        Sandbox Utils currently provides a #SandboxFileChooserDialog based on
+        the #GtkFileChooserDialog class (but slightly different). In a distant
+        future, we aim to provide a #RecentChooserMenu; a widget that scans for
+        files of user-chosen mime types in user-chosen folders and gives
+        permanent (read-only or read-write) access to them for apps like music
+        players; a slightly different file chooser that allows one-click group
+        selections for apps that save multiple files per project; a print dialog;
+        buttons to provide access to various capabilities such as using the
+        webcam, recording the screen, providing a virtual keyboard, etc.
+      </para>
+      <para>
+        Designed for GNU/Linux only. The current version is a prototype that
+        relies on XEmbed to provide GUI integration between the Sandbox Utils
+        server and your application. It will start using a different interface
+        built for Wayland compositors when such an interface becomes available.
+      </para>
+      <para>
+        Written in C with multiple
+        <ulink role="online-location" url="https://wiki.gnome.org/Projects/GLib">GLib</ulink>
+        and <ulink role="online-location" url="http://www.gtk.org/">GTK+</ulink>
+        dependencies. The code structure is freely inspired by GTK+, and much of
+        the code and documentation is a straight copy. Thanks GTK+ for your
+        permissive license! This project is distributed under a <ulink role="online-location" 
+        url="https://www.gnu.org/licenses/lgpl-3.0.html">GNU Lesser General Public License v3</ulink>.
+      </para>
+
+      <para>
+        Want to contribute a Qt version? Get in touch!
+      </para>
+    </partintro>
+
+    <xi:include href="history.xml"/>
+    <xi:include href="objectives.xml"/>
+    <xi:include href="how-to-use.xml"/>
+    <xi:include href="how-to-contribute.xml" />
+  </part>
+
+
+  <part id="libsandboxutils">
+    <title>Library API Reference</title>
+
+    <chapter>
+      <title>Object Hierarchy</title>
+      <xi:include href="xml/tree_index.sgml" />
+    </chapter>
+    <chapter>
+      <title>Widget Gallery</title>
+      <xi:include href="visual_index.xml" />
+    </chapter>
+
+    <chapter id="GeneralUsage">
+      <title>General Usage</title>
+      <xi:include href="xml/sandboxutilscommon.xml" />
+    </chapter>
+
+    <chapter id="FileSelectors">
+      <title>File Selectors</title>
+      <xi:include href="xml/sandboxfilechooserdialog.xml" />
+      <xi:include href="xml/localfilechooserdialog.xml" />
+      <xi:include href="xml/remotefilechooserdialog.xml" />
+    </chapter>
+
+  </part>
+
+
+<!--
+  <part id="low-level">
+    <title>Low-level API Reference and Server Internals</title>
+
+    <chapter  id="sandboxutilsd">
+      <title>Internals of sandboxutilsd</title>
+    </chapter>
+
+    <chapter id="SfcdDbusAPI">
+      <title>SandboxFileChooserDialog D-Bus API</title>
+      <xi:include href="xml/sandboxfilechooserdialogdbusobject.xml" />
+    </chapter>
+  </part>
+-->
+
+
+  <index id="api-index-full">
+    <title>Index of all symbols</title>
+    <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-deprecated" role="deprecated">
+    <title>Index of deprecated symbols</title>
+    <xi:include href="xml/api-index-deprecated.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-0-3" role="0.3">
+    <title>Index of new symbols in 0.3</title>
+    <xi:include href="xml/api-index-0.3.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-0-4" role="0.4">
+    <title>Index of new symbols in 0.4</title>
+    <xi:include href="xml/api-index-0.4.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-0-5" role="0.5">
+    <title>Index of new symbols in 0.5</title>
+    <xi:include href="xml/api-index-0.5.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-0-6" role="0.6">
+    <title>Index of new symbols in 0.6</title>
+    <xi:include href="xml/api-index-0.6.xml"><xi:fallback /></xi:include>
+  </index>
+
+  <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
+</book>

@@ -1,4 +1,23 @@
+2014-05-13  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * configure.ac: Bumping to 0.6.1.
+
+    * docs/: The documentation building chain now works, and basic documentation
+    is in place (including basic API references and placeholders for future
+    manual documentation).
+
+    * lib/sandboxutilscommom.*: Changing internal method names to avoid
+    namespace conflicts.
+
 2014-05-12  Steve Dodier-Lazaro  <sidnioulz@gmail.com>
+
+    * lib/sandboxutilscommon.*: Sandboxutils_init() is now implemented, so apps
+    can call --no-sandbox to use local dialogs.
+
+    * lib/*filechooserdialog.*: Implemented select/unselect methods.
+
+    * lib/remotefilechooserdialog.*: Remote dialogs now have feature parity with
+    local ones.
 
     * lib/*filechooserdbuswrapper.*: Implemented extra widgets with GtkPlug and
     GtkSocket. New dependency on X11 -- will not build with other display
